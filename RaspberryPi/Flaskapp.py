@@ -1,13 +1,58 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import time
 import threading
+import cv2
+
+#import camera libraries
+from picamera2 import Picamera2
 
 """
 use curl to send post commands for testing
 curl -X POST -H "Content-Type: application/json" -d "{\"motor_speed_left\": 166, \"motor_speed_right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://<PI'sIP>:5000/control
+curl -X POST -d "command=left" http://192.168.1.229:5000/command 
+
 """
 
 app = Flask(__name__)
+
+# --- PI Camera and video generation
+camera = Picamera2()
+
+#camera config
+camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+camera.configure(camera_config)
+camera.start()
+
+
+# --- Generate Frames ---
+def generate_frames():
+
+    while True:
+        # get singular video frame
+        vidFrame =  camera.capture_array()
+
+        #convert to BGR for cv2
+        frameBGR = cv2.cvtColor(vidFrame, cv2.COLOR_RGB2BGR)
+
+        #JPG encoding
+        ret, buffer = cv2.imencode('.jpg', frameBGR)
+
+        #split frame into bytes
+        frameBytes = buffer.tobytes()
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frameBytes + b'\r\n')
+
+        #time delay for cpu usage. added for 20fps
+        time.sleep(0.05)
+
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+#   --- blimp data and network code
 
 #blimp data to respond to get commands
 #add more data points after setup on sensors
@@ -29,7 +74,17 @@ control_commands = {
 # index route
 @app.route('/')
 def index():
-    return "blimp control server is running!"
+    return  """
+    <html>
+    <head>
+        <title>Flask app is online</title>
+    </head>
+    <body>
+        <h1>Live Video Feed</h1>
+        <img src="/video_feed" width="640" height="480" />
+    </body>
+    </html>
+    """
 
 #get status route
 @app.route('/blimp-status', methods=['GET'])
@@ -60,6 +115,26 @@ def receive_control_commands():
     else:
         # if the request is not JSON, return an error
         return jsonify({"status": "error", "message": "no json provided"}), 400
+
+# --- Manual Command setup (arrow keys) -----
+@app.route('/command', methods=['POST'])
+def receive_command():
+    cmd = request.form.get('command')
+    if cmd:
+        print(f"Received command: {cmd}")
+        if cmd == "left":
+            control_commands["motor_speed_left"] = 50
+            control_commands["motor_speed_right"] = 0
+        elif cmd == "right":
+            control_commands["motor_speed_left"] = 0
+            control_commands["motor_speed_right"] = 50
+        elif cmd == "forward":
+            control_commands["motor_speed_left"] = 180
+            control_commands["motor_speed_right"] = 180         
+        return "OK", 200
+    return "No command received", 400
+
+
 
 #  Run flask app - main
 if __name__ == '__main__':

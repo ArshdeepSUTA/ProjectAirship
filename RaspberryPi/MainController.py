@@ -26,10 +26,11 @@ if __name__ == '__main__':
     flaskThread.daemon = True
     flaskThread.start()
 
-    # --- start uart ---
-    uart.initUart()
-    readerThread = threading.Thread(target=uartReader, daemon=True)
-    readerThread.start()
+    # # --- start uart ---
+    # print("Starting UART app as a thread...")
+    # uart.initUart()
+    # readerThread = threading.Thread(target=uartReader, daemon=True)
+    # readerThread.start()
 
-
-    
+    while True:
+        time.sleep(1)
