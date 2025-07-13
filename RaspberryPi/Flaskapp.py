@@ -18,7 +18,7 @@ app = Flask(__name__)
 # --- PI Camera and video generation
 camera = Picamera2()
 
-#camera config
+# #camera config --- uncomment when camera is plugged in
 camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
 camera.configure(camera_config)
 camera.start()
@@ -57,9 +57,18 @@ def video_feed():
 #blimp data to respond to get commands
 #add more data points after setup on sensors
 blimp_data = {
-    "altitude": 0.0, 
     "speed": 0.0,
-    "battery_level": 100 #percent
+    "battery_level": 100,
+    #barometer data
+    "altitude": 0.0, 
+    "temperature" : 24.32,
+    "pressure" : 779.70,
+    #IMU data
+    "acc x": 0,
+    "mag x": 0,
+    "gyro x": 0,
+    #lidar Data
+    "distance": 0
 }
 
 #control commands reiceved from laptop

@@ -12,9 +12,31 @@ def runFlaskApp():
 def uartReader():
     while True:
         line = uart.readArduinoData()
+        handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(1) #add or remove delay on reading data
+            time.sleep(0.05) #add or remove delay on reading data
+
+# ---- Handle command data sent by the UART and update blimp_status dictionary --- 
+def handleData(line):
+    if line and ':' in line:
+        #split line in key and vlaue
+        key_temp, value_temp = line.split(':', 1)
+        key = key_temp.strip()
+        value_string = value_temp.strip()
+
+        try:
+            if '.' in value_string:
+                value = float(value_string)
+            else:
+                value = int(value_string)
+            
+            Flaskapp.blimp_data[key] = value
+        
+        except ValueError:
+            pass
+
+
 
 
 if __name__ == '__main__':
