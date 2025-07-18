@@ -37,18 +37,37 @@ def read_gps():
             stale_threshold = 3.0
             
             if data_age_seconds < stale_threshold:
-                print("Latitude:", packet.lat)
-                print("Longitude:", packet.lon)
-                print("Altitude:", (packet.alt * 3.281), "ft")
-                print("Speed:", packet.hspeed, "mph")
-                print("Climb:", packet.climb)
-                print("Heading:", packet.track, "deg from true north")
+                lat = packet.lat
+                lon = packet.lon
+                alt = (packet.alt * 3.281)
+                speed = packet.hspeed
+                climb = packet.climb
+                heading = packet.track
+                #print("Latitude:", packet.lat)
+                #print("Longitude:", packet.lon)
+                #print("Altitude:", (packet.alt * 3.281), "ft")
+                #print("Speed:", packet.hspeed, "mph")
+                #print("Climb:", packet.climb)
+                #print("Heading:", packet.track, "deg from true north")
             else:
                 print("Waiting for GPS fix...")
+                lat = 0.0
+                lon = 0.0
+                alt = 0.0
+                speed = 0.0
+                climb = 0.0
+                heading = 0.0
         else:
             print("Waiting for GPS fix...")
     except Exception as e:
         print("Error reading GPS:", e)
+        lat = 0.0
+        lon = 0.0
+        alt = 0.0
+        speed = 0.0
+        climb = 0.0
+        heading = 0.0             
+    return lat, lon, alt, speed, climb, heading
     
 # Main loop
 while True:
