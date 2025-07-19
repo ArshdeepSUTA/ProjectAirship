@@ -44,18 +44,18 @@ def handleData(line):
 def GPSReader():
     # get data from gps function
     while True:
-    try:
-        lat, lon, alt, speed, climb, heading = gps_hat.read_gps()
-        with blimp_data_lock:
-            Flaskapp.blimp_data["lat"] = lat
-            Flaskapp.blimp_data["lon"] = lon
-            Flaskapp.blimp_data["alt"] = alt
-            Flaskapp.blimp_data["speed"] = speed
-            Flaskapp.blimp_data["climb"] = climb
-            Flaskapp.blimp_data["heading"] = heading
-        sleep(1)
-    except Exception as e:
-        print(f"GPS thread could not read due to {e}")
+        try:
+            lat, lon, alt, speed, climb, heading = gps_hat.read_gps()
+            with blimp_data_lock:
+                Flaskapp.blimp_data["lat"] = lat
+                Flaskapp.blimp_data["lon"] = lon
+                Flaskapp.blimp_data["alt"] = alt
+                Flaskapp.blimp_data["speed"] = speed
+                Flaskapp.blimp_data["climb"] = climb
+                Flaskapp.blimp_data["heading"] = heading
+            time.sleep(1)
+        except Exception as e:
+            print(f"GPS thread could not read due to {e}")
 
 
 
