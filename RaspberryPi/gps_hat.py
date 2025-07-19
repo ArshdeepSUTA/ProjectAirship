@@ -4,23 +4,33 @@ import time
 from datetime import datetime, timedelta
 
 # Connect to gpsd
-gpsd.connect()
 
-# Open Arduino serial connection (adjust port and baudrate)
-arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
-time.sleep(2) # Allow Arduino time to reset
-
-def read_arduino():
-    lines = ""
+def gps_connect():
     try:
-        while True:
-            line = arduino.readline().decode('utf-8').strip()
-            if line == "done":
-                break
-            else:
-                print(line)
+        gpsd.connect()
+        print("GPS Connected")
+    except gpsd.NoFixError:
+        print("Error: no fix")
     except Exception as e:
-        print("Error reading Arduino:", e)
+        print(f"Couldn't connect to GPSD due to {e}")
+
+
+
+# # Open Arduino serial connection (adjust port and baudrate)
+# arduino = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+# time.sleep(2) # Allow Arduino time to reset
+
+# def read_arduino():
+#     lines = ""
+#     try:
+#         while True:
+#             line = arduino.readline().decode('utf-8').strip()
+#             if line == "done":
+#                 break
+#             else:
+#                 print(line)
+#     except Exception as e:
+#         print("Error reading Arduino:", e)
         
 def read_gps():
     try:
@@ -68,10 +78,12 @@ def read_gps():
         climb = 0.0
         heading = 0.0             
     return lat, lon, alt, speed, climb, heading
-    
-# Main loop
-while True:
-    read_arduino()
-    read_gps()
-    time.sleep(1)
+
+
+if __name__ == '__main__':   
+    # Main loop
+    while True:
+        read_arduino()
+        read_gps()
+        time.sleep(1)
         

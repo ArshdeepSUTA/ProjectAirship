@@ -10,8 +10,13 @@ arduino = None
 #serial connect
 def initUart():
     global arduino
-    arduino = serial.Serial(SER_PORT, BAUD_RATE, timeout=1)
-    print(f"UART Connected")
+
+    try:
+        arduino = serial.Serial(SER_PORT, BAUD_RATE, timeout=1)
+        print(f"UART Connected")
+    except serial.SerialException as e:
+        print(f"Cound't connect to UART due to {e}")
+
 
 #UART FUNCTIONS FOR USE IN THE CONTROLELR AND FLASKAPP
 

@@ -2,7 +2,10 @@ import Flaskapp
 import time
 import threading
 import uart
+import gps_hat
 
+#---- THREAD MUTEX FOR WRITING TO GPS DATA ----
+blimp_data_lock = threading.Lock() 
 
 #flask app (networking) thread function, starts the flask app in its own special thread
 def runFlaskApp():
@@ -31,11 +34,28 @@ def handleData(line):
             else:
                 value = int(value_string)
             
-            Flaskapp.blimp_data[key] = value
+            with blimp_data_lock:
+                Flaskapp.blimp_data[key] = value
         
         except ValueError:
             pass
 
+# ---- GPS reader thread -----
+def GPSReader():
+    # get data from gps function
+    while True:
+    try:
+        lat, lon, alt, speed, climb, heading = gps_hat.read_gps()
+        with blimp_data_lock:
+            Flaskapp.blimp_data["lat"] = lat
+            Flaskapp.blimp_data["lon"] = lon
+            Flaskapp.blimp_data["alt"] = alt
+            Flaskapp.blimp_data["speed"] = speed
+            Flaskapp.blimp_data["climb"] = climb
+            Flaskapp.blimp_data["heading"] = heading
+        sleep(1)
+    except Exception as e:
+        print(f"GPS thread could not read due to {e}")
 
 
 
@@ -53,6 +73,12 @@ if __name__ == '__main__':
     # uart.initUart()
     # readerThread = threading.Thread(target=uartReader, daemon=True)
     # readerThread.start()
+
+    # --- start gps ---
+    print("Starting GPS thread")
+    gps_hat.gps_connect()
+    gps_thread = threading.Thread(target=GPSReader, daemon=True)
+    gps_thread.start()
 
     while True:
         time.sleep(1)

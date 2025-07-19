@@ -57,19 +57,29 @@ def video_feed():
 #blimp data to respond to get commands
 #add more data points after setup on sensors
 blimp_data = {
-    "speed": 0.0,
     "battery_level": 100,
-    #barometer data
-    "altitude": 0.0, 
-    "temperature" : 24.32,
-    "pressure" : 779.70,
-    #IMU data
-    "acc x": 0,
-    "mag x": 0,
-    "gyro x": 0,
-    #lidar Data
-    "distance": 0
+    #IMU DATA
+    "Accel_X": 0.0,
+    "Accel_Y": 0.0,
+    "Accel_Z": 0.0,
+    "Mag_X": 0.0,
+    "Mag_Y": 0.0,
+    "Mag_Z": 0.0,
+    "Gyro_X": 0.0,
+    "Gyro_Y": 0.0,
+    "Gyro_Z": 0.0,
+    #LIDAR DATA
+    "distance": 0,
+    #GPS DATA
+    "lat": 0.0,
+    "lon": 0.0,
+    "alt": 0.0,
+    "speed": 0.0,
+    "climb": 0.0,
+    "heading": 0.0,
 }
+
+
 
 #control commands reiceved from laptop
 #add controls
