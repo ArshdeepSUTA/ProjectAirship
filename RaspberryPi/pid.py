@@ -53,7 +53,11 @@ def update_pid(pid, current_altitude):
 
     # --- PID output calculation ---
     output = (pid['Kp'] * error) + (pid['Ki'] * pid['integral']) + (pid['Kd'] * derivative)
-    output = max(pid['output_limits'][0], min(output, pid['output_limits'][1]))
+    
+    if output < pid['output_limits'][0]:
+        output = pid['output_limits'][0]
+    elif output > pid['output_limits'][1]:
+        output = pid['output_limits'][1]
 
     # Update state
     pid['prev_error'] = error
@@ -65,7 +69,7 @@ def update_pid(pid, current_altitude):
 
 if __name__ == '__main__':
     # === pid initialization ===
-    pid = init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=100.0, output_limits=(0, 180))
+    pid = init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=200.0, output_limits=(0, 180))
     # === end pid initialization ===
 
     system_value = 0.0
@@ -77,4 +81,4 @@ if __name__ == '__main__':
 
         print(f"setpoint: {pid['setpoint']:.2f} | value: {system_value:.2f} | output: {output:.2f}")
 
-        time.sleep(1)
+        time.sleep(0.5)
