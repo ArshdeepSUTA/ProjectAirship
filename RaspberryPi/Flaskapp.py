@@ -16,12 +16,12 @@ curl -X POST -d "command=left" http://192.168.1.229:5000/command
 app = Flask(__name__)
 
 # --- PI Camera and video generation
-camera = Picamera2()
+# camera = Picamera2()
 
-# #camera config --- uncomment when camera is plugged in
-camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
-camera.configure(camera_config)
-camera.start()
+# # #camera config --- uncomment when camera is plugged in
+# camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+# camera.configure(camera_config)
+# camera.start()
 
 
 # --- Generate Frames ---
@@ -86,6 +86,8 @@ blimp_data = {
 control_commands = {
     "motor_speed_left": 0,  
     "motor_speed_right": 0,
+    "motor_speed_A": 0,
+    "motor_speed_B": 0,
     "stop": 0,   
     "target_altitude": 0.0
 }
@@ -148,8 +150,11 @@ def receive_command():
             control_commands["motor_speed_left"] = 0
             control_commands["motor_speed_right"] = 50
         elif cmd == "forward":
-            control_commands["motor_speed_left"] = 180
-            control_commands["motor_speed_right"] = 180         
+            control_commands["motor_speed_left"] = 50
+            control_commands["motor_speed_right"] = 50
+        elif cmd == "stop":
+            control_commands["motor_speed_left"] = 0
+            control_commands["motor_speed_right"] = 0       
         return "OK", 200
     return "No command received", 400
 

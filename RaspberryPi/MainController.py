@@ -3,6 +3,7 @@ import time
 import threading
 import uart
 import gps_hat
+import pid
 
 #---- THREAD MUTEX FOR WRITING TO GPS DATA ----
 blimp_data_lock = threading.Lock() 
@@ -57,10 +58,57 @@ def GPSReader():
         except Exception as e:
             print(f"GPS thread could not read due to {e}")
 
+# ---- Arduino writer thread ----
+def arduinoWriter():
+
+    last_commands = {}
+
+    while True:
+        # Only send if commands have changed
+        with blimp_data_lock:
+            commands = Flaskapp.control_commands.copy()
+
+        if commands != last_commands:
+
+            for key, value in commands.items():
+                uart.writeArduinoCommmand(key, value)
+
+            last_commands = commands
+
+        time.sleep(0.05)  # Adjust as needed
+
+# ---- PID controller thread ----
+def PIDController():
+    # Initialize PID controller
+    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['target_altitude'], output_limits=(0, 180))
+    
+    while True:
+        pid.set_altitude(pid_controller, Flaskapp.control_commands['target_altitude'])
+        # Update PID with current altitude
+        output = pid.update_pid(pid_controller, Flaskapp.blimp_data["alt"])
+
+        with blimp_data_lock:
+            Flaskapp.control_commands['motor_speed_A'] = output
+            Flaskapp.control_commands['motor_speed_B'] = output
+
+        # short delay
+        time.sleep(0.05)
+
+
 
 
 if __name__ == '__main__':
     print("Starting Blimp controller program")
+
+
+    # # --- start gps ---
+    # print("Starting GPS thread")
+    # gps_hat.gps_connect()
+    # gps_thread = threading.Thread(target=GPSReader, daemon=True)
+    # gps_thread.start()
+
+    #delay for gps to connect and start
+    time.sleep(3)
 
     # --- start networking ---
     print("Starting Flask app as a thread...")
@@ -74,11 +122,15 @@ if __name__ == '__main__':
     # readerThread = threading.Thread(target=uartReader, daemon=True)
     # readerThread.start()
 
-    # --- start gps ---
-    print("Starting GPS thread")
-    gps_hat.gps_connect()
-    gps_thread = threading.Thread(target=GPSReader, daemon=True)
-    gps_thread.start()
+    # --- start pid controller ---
+    print("Starting PID controller thread")
+    pid_thread = threading.Thread(target=PIDController, daemon=True)
+    pid_thread.start()
+
+    # --- start arduino writer ---
+    print("Starting Arduino writer thread")
+    arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
+    arduino_thread.start()
 
     while True:
         time.sleep(1)
