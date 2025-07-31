@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Airship Ground Station</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+    <h1>Airship Ground Station</h1>
+
+    <div class="control-layout">
+        <h2>Airship Control<br</h2>
+
+        <div class="main-controls">
+            <div class="spacer"></div>
+            <button id="forward">Forward</button>
+            <div class="spacer"></div>
+
+            <button id="left">Left</button>
+            <div class="spacer"></div>
+            <button id="right">Right</button>
+
+            <div class="spacer"></div>
+            <button id="up">Up</button>
+            <div class="spacer"></div>
+            <div class="spacer"></div>
+            <button id="down">Down</button>
+        </div>
+    </div>
+
+    <div id="motor-strength">
+        <h3>Manual Controls</h3>
+        <label>Left Motor Strength:
+            <input type="number" id="left-motor" min="0" max="180">
+        </label><br>
+        <label>Right Motor Strength:
+            <input type="number" id="right-motor" min="0" max="180">
+        </label><br>
+        <label>Target Altitude:
+            <input type="number" id="target-altitude" step="0.1">
+        </label><br>
+        <button onclick="sendManualCommand()">Send Command</button>
+    </div>
+
+    <div class="telemetry">
+        <h3>Telemetry</h3>
+        <p>Latitude: {{ telemetry.lat }}</p>
+        <p>Longitude: {{ telemetry.lon }}</p>
+        <p>Altitude: {{ telemetry.alt }}</p>
+        <p>Battery: {{ telemetry.battery }}</p>
+        <p>Yaw: {{ telemetry.yaw }}</p>
+    </div>
+
+    <div class="video_feed">
+        <img id="video-stream" src="http://171.20.10.5:8080/video_feed" width="640" height="480" alt="Video feed not available">
+    </div>
+
+    <div id="map" style="height: 400px; width: 600px; margin: 20px auto;"></div>
+    <button onclick="sendWaypoints()">Send Waypoints to Blimp</button>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

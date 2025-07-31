@@ -1,0 +1,67 @@
+body {
+    height: 100%;
+    width: 100%;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 40px;
+}
+
+h1 {
+    height: 100%;
+    width: 100%;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.control-layout {
+    height: 40%;
+    width: 40%;
+    display: flex;
+    justify-content: left;
+}
+
+.main-controls {
+    display: grid;
+    grid-template-columns: 100px 100px 100px;
+    grid-template-rows: 100px 100px 100px;
+    gap: 10px;
+    align-items: center;
+    justify-items: center;
+}
+
+#motor-strength {
+    height: auto;
+    width: 40%;
+    justify-content: left;
+    text-align: center;
+}
+
+button {
+    padding: 15px 20px;
+    font-size: 16px;
+    border: 2px solid #444;
+    border-radius: 8px;
+    background-color: #eee;
+    transition: background-color 0.2s;
+    min-width: 100px;
+}
+
+button.active {
+    background-color: #90ee90;
+}
+
+.spacer {
+    width: 100px;
+    height: 100px;
+}
+
+.telemetry {
+    height: 30%;
+    width: 30%;
+    justify-content: left;
+}
+
+#map {
+    border: 2px solid #333;
+    border-radius: 8px;
+}
