@@ -8,7 +8,7 @@ from picamera2 import Picamera2
 
 """
 use curl to send post commands for testing
-curl -X POST -H "Content-Type: application/json" -d "{\"motor_speed_left\": 166, \"motor_speed_right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://<PI'sIP>:5000/control
+curl -X POST -H "Content-Type: application/json" -d "{\"left\": 166, \"right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://127.0.0.1:5000/control
 curl -X POST -d "command=left" http://192.168.1.229:5000/command 
 
 """

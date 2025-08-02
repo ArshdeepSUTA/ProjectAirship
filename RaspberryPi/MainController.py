@@ -60,9 +60,6 @@ def GPSReader():
 
 # ---- Arduino writer thread ----
 def arduinoWriter():
-
-    #last_commands = {}
-
     while True:
         # Only send if commands have changed
         with blimp_data_lock:

@@ -73,9 +73,12 @@ if __name__ == '__main__':
     # === end pid initialization ===
 
     system_value = 0.0
-
+    i = 0
     print("starting pid simulation loop...")
     while True:
+
+        if i > 30:
+            set_altitude(pid, 0)
         output = update_pid(pid, system_value)
         system_value += (output - system_value) * 0.1
 
