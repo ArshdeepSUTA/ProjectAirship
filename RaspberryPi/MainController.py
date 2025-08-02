@@ -19,7 +19,7 @@ def uartReader():
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(0.05) #add or remove delay on reading data
+            time.sleep(0.1) #add or remove delay on reading data
 
 # ---- Handle command data sent by the UART and update blimp_status dictionary --- 
 def handleData(line):
@@ -61,26 +61,21 @@ def GPSReader():
 # ---- Arduino writer thread ----
 def arduinoWriter():
 
-    last_commands = {}
+    #last_commands = {}
 
     while True:
         # Only send if commands have changed
         with blimp_data_lock:
             commands = Flaskapp.control_commands.copy()
-
-        if commands != last_commands:
-
             for key, value in commands.items():
-                uart.writeArduinoCommmand(key, value)
+                uart.writeArduinoCommmand(key, f"{value}")
 
-            last_commands = commands
-
-        time.sleep(0.05)  # Adjust as needed
+        time.sleep(1)  # Adjust as needed
 
 # ---- PID controller thread ----
 def PIDController():
     # Initialize PID controller
-    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['target_altitude'], output_limits=(0, 180))
+    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['target_altitude'], output_limits=(0, 50))
     
     while True:
         pid.set_altitude(pid_controller, Flaskapp.control_commands['target_altitude'])
@@ -88,11 +83,11 @@ def PIDController():
         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["alt"])
 
         with blimp_data_lock:
-            Flaskapp.control_commands['motor_speed_A'] = output
-            Flaskapp.control_commands['motor_speed_B'] = output
+            Flaskapp.control_commands['frontleft'] = int(output)
+            Flaskapp.control_commands['frontright'] = int(output)
 
         # short delay
-        time.sleep(0.05)
+        time.sleep(0.5)
 
 
 
@@ -108,7 +103,7 @@ if __name__ == '__main__':
     # gps_thread.start()
 
     #delay for gps to connect and start
-    time.sleep(3)
+    time.sleep(1)
 
     # --- start networking ---
     print("Starting Flask app as a thread...")
@@ -116,11 +111,11 @@ if __name__ == '__main__':
     flaskThread.daemon = True
     flaskThread.start()
 
-    # # --- start uart ---
-    # print("Starting UART app as a thread...")
-    # uart.initUart()
-    # readerThread = threading.Thread(target=uartReader, daemon=True)
-    # readerThread.start()
+    # --- start uart ---
+    print("Starting UART app as a thread...")
+    uart.initUart()
+    readerThread = threading.Thread(target=uartReader, daemon=True)
+    readerThread.start()
 
     # --- start pid controller ---
     print("Starting PID controller thread")
@@ -133,4 +128,5 @@ if __name__ == '__main__':
     arduino_thread.start()
 
     while True:
+        #uart.writeArduinoCommmand("left","20")
         time.sleep(1)

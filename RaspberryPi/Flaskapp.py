@@ -73,7 +73,7 @@ blimp_data = {
     #GPS DATA
     "lat": 0.0,
     "lon": 0.0,
-    "alt": 0.0,
+    "alt": 4.0,
     "speed": 0.0,
     "climb": 0.0,
     "heading": 0.0,
@@ -84,12 +84,12 @@ blimp_data = {
 #control commands reiceved from laptop
 #add controls
 control_commands = {
-    "motor_speed_left": 0,  
-    "motor_speed_right": 0,
-    "motor_speed_A": 0,
-    "motor_speed_B": 0,
+    "left": 0,  
+    "right": 0,
+    "frontleft": 0,
+    "frontright": 0,
     "stop": 0,   
-    "target_altitude": 0.0
+    "target_altitude": 20.0
 }
 
 # index route
@@ -124,8 +124,8 @@ def receive_control_commands():
         received_json = request.get_json()
 
         #update variables in controls object - added key error protection
-        control_commands["motor_speed_left"] = received_json.get("motor_speed_left", control_commands["motor_speed_left"])
-        control_commands["motor_speed_right"] = received_json.get("motor_speed_right", control_commands["motor_speed_right"])
+        control_commands["left"] = received_json.get("left", control_commands["left"])
+        control_commands["right"] = received_json.get("right", control_commands["right"])
         control_commands["stop"] = received_json.get("stop", control_commands["stop"])
         control_commands["target_altitude"] = received_json.get("target_altitude", control_commands["target_altitude"])
         
@@ -144,17 +144,17 @@ def receive_command():
     if cmd:
         print(f"Received command: {cmd}")
         if cmd == "left":
-            control_commands["motor_speed_left"] = 50
-            control_commands["motor_speed_right"] = 0
+            control_commands["left"] = 50
+            control_commands["right"] = 0
         elif cmd == "right":
-            control_commands["motor_speed_left"] = 0
-            control_commands["motor_speed_right"] = 50
+            control_commands["left"] = 0
+            control_commands["right"] = 50
         elif cmd == "forward":
-            control_commands["motor_speed_left"] = 50
-            control_commands["motor_speed_right"] = 50
+            control_commands["left"] = 50
+            control_commands["right"] = 50
         elif cmd == "stop":
-            control_commands["motor_speed_left"] = 0
-            control_commands["motor_speed_right"] = 0       
+            control_commands["left"] = 0
+            control_commands["right"] = 0       
         return "OK", 200
     return "No command received", 400
 
