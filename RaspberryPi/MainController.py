@@ -84,7 +84,7 @@ def PIDController():
             Flaskapp.control_commands['frontright'] = int(output)
 
         # short delay
-        time.sleep(0.5)
+        time.sleep(1)
 
 
 

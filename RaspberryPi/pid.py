@@ -69,7 +69,7 @@ def update_pid(pid, current_altitude):
 
 if __name__ == '__main__':
     # === pid initialization ===
-    pid = init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=200.0, output_limits=(0, 180))
+    pid = init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=40.0, output_limits=(0, 50))
     # === end pid initialization ===
 
     system_value = 0.0
@@ -78,10 +78,12 @@ if __name__ == '__main__':
     while True:
 
         if i > 30:
-            set_altitude(pid, 0)
+            set_altitude(pid, 4)
+        
         output = update_pid(pid, system_value)
         system_value += (output - system_value) * 0.1
 
         print(f"setpoint: {pid['setpoint']:.2f} | value: {system_value:.2f} | output: {output:.2f}")
 
+        i += 1
         time.sleep(0.5)

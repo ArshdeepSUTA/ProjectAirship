@@ -73,7 +73,7 @@ blimp_data = {
     #GPS DATA
     "lat": 0.0,
     "lon": 0.0,
-    "alt": 4.0,
+    "alt": 0.0,
     "speed": 0.0,
     "climb": 0.0,
     "heading": 0.0,
@@ -143,18 +143,24 @@ def receive_command():
     cmd = request.form.get('command')
     if cmd:
         print(f"Received command: {cmd}")
-        if cmd == "left":
+        if cmd == "left":               # turn left - speed 50
             control_commands["left"] = 50
             control_commands["right"] = 0
-        elif cmd == "right":
+        elif cmd == "right":            # turn right - speed 50  
             control_commands["left"] = 0
             control_commands["right"] = 50
-        elif cmd == "forward":
+        elif cmd == "forward":          # move forward - both motors at speed 50
             control_commands["left"] = 50
             control_commands["right"] = 50
-        elif cmd == "stop":
+        elif cmd == "stop":             # stop both motors 
             control_commands["left"] = 0
-            control_commands["right"] = 0       
+            control_commands["right"] = 0
+        elif cmd == "left_stop":        # stop left motor
+            control_commands["left"] = 0
+            control_commands["right"] = 0
+        elif cmd == "right_stop":       # stop right motor
+            control_commands["left"] = 0
+            control_commands["right"] = 0
         return "OK", 200
     return "No command received", 400
 
