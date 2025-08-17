@@ -11,7 +11,7 @@ blimp_data_lock = threading.Lock()
 #flask app (networking) thread function, starts the flask app in its own special thread
 def runFlaskApp():
     print("Running Flask app...")
-    Flaskapp.app.run(host='0.0.0.0', port=5000, debug=False)
+    Flaskapp.app.run(host='192.168.4.1', port=5000, debug=False)
 
 def uartReader():
     while True:
@@ -19,7 +19,7 @@ def uartReader():
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(0.1) #add or remove delay on reading data
+            time.sleep(0.001) #add or remove delay on reading data
 
 # ---- Handle command data sent by the UART and update blimp_status dictionary --- 
 def handleData(line):
@@ -126,4 +126,4 @@ if __name__ == '__main__':
 
     while True:
         #uart.writeArduinoCommmand("left","20")
-        time.sleep(1)
+        time.sleep(5)

@@ -9,7 +9,7 @@ from picamera2 import Picamera2
 """
 use curl to send post commands for testing
 curl -X POST -H "Content-Type: application/json" -d "{\"left\": 166, \"right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://127.0.0.1:5000/control
-curl -X POST -d "command=left" http://192.168.1.229:5000/command 
+curl -X POST -d "command=left" http://192.168.4.1:5000/command 
 
 """
 
@@ -152,13 +152,13 @@ def receive_command():
         elif cmd == "forward":          # move forward - both motors at speed 50
             control_commands["left"] = 50
             control_commands["right"] = 50
-        elif cmd == "stop":             # stop both motors 
+        elif cmd == "stop-forward":     # stop both motors 
             control_commands["left"] = 0
             control_commands["right"] = 0
-        elif cmd == "left_stop":        # stop left motor
+        elif cmd == "stop-left":        # stop left motor
             control_commands["left"] = 0
             control_commands["right"] = 0
-        elif cmd == "right_stop":       # stop right motor
+        elif cmd == "stop-right":       # stop right motor
             control_commands["left"] = 0
             control_commands["right"] = 0
         return "OK", 200
