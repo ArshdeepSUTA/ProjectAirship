@@ -88,41 +88,89 @@ def PIDController():
 
 
 
+# --- thread functions: Starting threads for gps, flask, uart read/write, pid controller ---
+def start_gps_thread():
+    print("Starting GPS thread...")
+    gps_hat.gps_connect()
+    gps_thread = threading.Thread(target=GPSReader, daemon=True)
+    gps_thread.start()
+    # Give GPS time to stabilize
+    time.sleep(1)
+    return gps_thread
+
+def start_flask_thread():
+    print("Starting Flask app as a thread...")
+    flask_thread = threading.Thread(target=runFlaskApp, daemon=True)
+    flask_thread.start()
+    return flask_thread
+
+def start_uart_reader_thread():
+    print("Starting UART app as a thread...")
+    uart.initUart()
+    reader_thread = threading.Thread(target=uartReader, daemon=True)
+    reader_thread.start()
+    return reader_thread
+
+def start_arduino_writer_thread():
+    print("Starting Arduino writer thread...")
+    arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
+    arduino_thread.start()
+    return arduino_thread
+
+def start_pid_thread():
+    print("Starting PID controller thread...")
+    pid_thread = threading.Thread(target=PIDController, daemon=True)
+    pid_thread.start()
+    return pid_thread
+
 
 if __name__ == '__main__':
     print("Starting Blimp controller program")
 
+    # # # --- start gps ---
+    # # print("Starting GPS thread")
+    # # gps_hat.gps_connect()
+    # # gps_thread = threading.Thread(target=GPSReader, daemon=True)
+    # # gps_thread.start()
 
-    # # --- start gps ---
-    # print("Starting GPS thread")
-    # gps_hat.gps_connect()
-    # gps_thread = threading.Thread(target=GPSReader, daemon=True)
-    # gps_thread.start()
+    # #delay for gps to connect and start
+    # time.sleep(1)
 
-    #delay for gps to connect and start
-    time.sleep(1)
+    # # --- start networking ---
+    # print("Starting Flask app as a thread...")
+    # flaskThread = threading.Thread(target=runFlaskApp)
+    # flaskThread.daemon = True
+    # flaskThread.start()
 
-    # --- start networking ---
-    print("Starting Flask app as a thread...")
-    flaskThread = threading.Thread(target=runFlaskApp)
-    flaskThread.daemon = True
-    flaskThread.start()
+    # # --- start uart and reader thread --- 
+    # print("Starting UART app as a thread...")
+    # uart.initUart()
+    # readerThread = threading.Thread(target=uartReader, daemon=True)
+    # readerThread.start()
+    # # --- start arduino writer ---
+    # print("Starting Arduino writer thread")
+    # arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
+    # arduino_thread.start()
 
-    # --- start uart ---
-    print("Starting UART app as a thread...")
-    uart.initUart()
-    readerThread = threading.Thread(target=uartReader, daemon=True)
-    readerThread.start()
+    # # --- start pid controller ---
+    # print("Starting PID controller thread")
+    # pid_thread = threading.Thread(target=PIDController, daemon=True)
+    # pid_thread.start()
+    # --- Start Networking ----
+    flask_thread = start_flask_thread()
 
-    # --- start pid controller ---
-    print("Starting PID controller thread")
-    pid_thread = threading.Thread(target=PIDController, daemon=True)
-    pid_thread.start()
+    while(Flaskapp.blimp_data["startFlag"] == 0):
+        time.sleep(0.1)
 
-    # --- start arduino writer ---
-    print("Starting Arduino writer thread")
-    arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
-    arduino_thread.start()
+    # --- Start GPS ----
+    #gps_thread = start_gps_thread()
+
+    # --- Start UART read and write threads ----
+    uart_thread = start_uart_reader_thread()
+    arduino_thread = start_arduino_writer_thread()
+    # --- Start PID controller thread ----
+    pid_thread = start_pid_thread()
+
 
     while True:
         #uart.writeArduinoCommmand("left","20")

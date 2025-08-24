@@ -6,9 +6,11 @@ import cv2
 #import camera libraries
 from picamera2 import Picamera2
 
+
+
 """
 use curl to send post commands for testing
-curl -X POST -H "Content-Type: application/json" -d "{\"left\": 166, \"right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://127.0.0.1:5000/control
+curl -X POST -H "Content-Type: application/json" -d "{\"left\": 166, \"right\": 150, \"stop\": 2, \"target_altitude\": 25.1}" http://192.168.4.1:5000/control
 curl -X POST -d "command=left" http://192.168.4.1:5000/command 
 
 """
@@ -77,6 +79,7 @@ blimp_data = {
     "speed": 0.0,
     "climb": 0.0,
     "heading": 0.0,
+    "startFlag" : 0
 }
 
 
@@ -161,6 +164,10 @@ def receive_command():
         elif cmd == "stop-right":       # stop right motor
             control_commands["left"] = 0
             control_commands["right"] = 0
+        elif cmd == "start-blimp":
+            blimp_data["startFlag"] = 1
+        elif cmd == "stop-bllimp":
+            blimp_data["startFlag"] = 0
         return "OK", 200
     return "No command received", 400
 
