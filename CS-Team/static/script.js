@@ -8,6 +8,42 @@ const keyToId = {
 };
 const activeKeys = new Set();
 
+function sendStartCommand() {
+    fetch('/command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'command=start-blimp'
+    }).then(response => {
+        if (response.ok) {
+            console.log("Start command sent successfully");
+        } else {
+            console.error("Failed to send start command");
+        }
+    }).catch(error => {
+        console.error("Error sending start command:", error);
+    });
+}
+
+function sendStopCommand() {
+    fetch('/command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'command=stop-blimp'
+    }).then(response => {
+        if (response.ok) {
+            console.log("Stop command sent successfully");
+        } else {
+            console.error("Failed to send stop command");
+        }
+    }).catch(error => {
+        console.error("Error sending stop command:", error);
+    });
+}
+
 function sendCommand(cmd) {
     fetch('/command', {
         method: 'POST',
@@ -191,4 +227,4 @@ function blimpPosition() {
         })
         .catch(err => console.error("Error fetching blimp position:", err));
 }
-setInterval(blimpPosition, 2000);
+//setInterval(blimpPosition, 2000);
