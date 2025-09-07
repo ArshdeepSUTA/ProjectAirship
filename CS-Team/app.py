@@ -3,29 +3,37 @@ import requests
 
 app = Flask(__name__)
 
-PI_IP = "http://171.20.10.5:5000/command"  # Replace with your Pi's IP
+PI_IP = "http://192.168.4.1:5000/command"  # Replace with your Pi's IP
 
-blimp_location = {"lat":0, "long":0}
+blimp_location = {"lat":32.731, "long":-97.110}
+
 waypoints = []
 
-blimp_data = { 
-    "speed": 0.0,
+blimp_data = {
     "battery_level": 100,
-    #barometer data
-    "altitude": 0.0, 
-    "temperature" : 24.32,
-    "pressure" : 779.70,
-    #IMU data
-    "acc x": 0,
-    "mag x": 0,
-    "gyro x": 0,
-    #lidar Data
-    "distance": 0
+    #IMU DATA
+    "Accel_X": 0.0,
+    "Accel_Y": 0.0,
+    "Accel_Z": 0.0,
+    "Mag_X": 0.0,
+    "Mag_Y": 0.0,
+    "Mag_Z": 0.0,
+    "Gyro_X": 0.0,
+    "Gyro_Y": 0.0,
+    "Gyro_Z": 0.0,
+    #LIDAR DATA
+    "distance": 0,
+    #GPS DATA
+    "lat": 0.0,
+    "lon": 0.0,
+    "alt": 0.0,
+    "speed": 0.0,
+    "climb": 0.0,
+    "heading": 0.0,
 }
 
 @app.route('/')
 def index():
-    data = request.form.get('blimp_data')
     return render_template('index.html', telemetry=blimp_data)
     # i will be reciveing a json image of the blimp data
 
@@ -33,12 +41,12 @@ def index():
 def command():
     cmd = request.form.get('command')
     if cmd:
-        print(f"Sending command to Pi: {cmd}")
+        app.logger.info(f"Sending command to Pi: {cmd}")
         try:
             res = requests.post(PI_IP, data={'command': cmd}, timeout=1)
-            print(f"Response from Pi: {res.status_code}")
+            app.logger.info(f"Response from Pi: {res.status_code}")
         except Exception as e:
-            print(f"Failed to send to Pi: {e}")
+            app.logger.error(f"Failed to send to Pi: {e}")
 
         return '', 204
     return 'No command received', 400
@@ -47,8 +55,8 @@ def command():
 def manual():
     try:
         # Get form data sent from HTML
-        left = request.form.get('left_motor')
-        right = request.form.get('right_motor')
+        left = request.form.get('left')
+        right = request.form.get('right')
         altitude = request.form.get('target_altitude')
 
         # Validate and convert to appropriate types
@@ -58,54 +66,56 @@ def manual():
 
         # Construct JSON payload
         payload = {
-            "motor_speed_left": left,
-            "motor_speed_right": right,
+            "left": left,
+            "right": right,
             "target_altitude": altitude
         }
 
-        print(f"Sending manual control data: {payload}")
+        app.logger.info(f"Sending manual control data: {payload}")
 
         # Send JSON to Pi
         res = requests.post(PI_IP, json=payload, timeout=1)
-        print(f"Response from Pi: {res.status_code}")
+        app.logger.info(f"Response from Pi: {res.status_code}")
 
         return '', 204
 
     except Exception as e:
-        print(f"Failed to send manual command to Pi: {e}")
+        app.logger.error(f"Failed to send manual command to Pi: {e}")
         return 'Error sending manual command', 500
-    
-
-@app.route('/video_feed', methods=['POST'])
-def get_video():
-    frame = request.form.get('video_feed')
     
 @app.route('/update_telemetry', methods=['POST'])
 def update_telemetry():
-    global blimp_data, blimp_location
+    global blimp_data
     try:
-        new_data = request.get_json()
-        if not new_data:
-            return 'No JSON received', 400
-        blimp_data.update(new_data)
+        # Send a GET request to the Pi's /blimp-data endpoint
+        res = requests.get(PI_IP.replace("/command", "/blimp-data"), timeout=1)
         
-        blimp_location["lat"] = new_data["latitude"]
-        blimp_location["long"] = new_data["longitude"]
-        
-        print("Updated telemetry:", blimp_data)
+        if res.status_code == 200:
+            telemetry_data = res.json()  # Parse the JSON response
+            blimp_data.update(telemetry_data)  # Update the blimp_data dictionary
+            app.logger.info(f"Updated telemetry: {blimp_data}")
+            return jsonify(blimp_data), 200  # Return the updated data to the client
+        else:
+            app.logger.error(f"Failed to fetch telemetry from Pi: {res.status_code}")
+            return 'Failed to fetch telemetry', 500
+    except Exception as e:
+        app.logger.error(f"Error updating telemetry: {e}")
+        return 'Failed to update telemetry', 500
+    
+@app.route('/send_waypoints', methods=['POST'])
+def send_waypoints():
+    global waypoints
+    try:
+        waypoints = request.get_json()
+        if not waypoints:
+            return 'No waypoints received', 400
+        app.logger.info(f"Sending waypoints to Pi: {waypoints}")
+        res = requests.post(PI_IP + "/waypoints", json=waypoints, timeout=2)
+        app.logger.info(f"Response from Pi: {res.status_code}")
+
         return '', 204
     except Exception as e:
-        print(f"Error updating telemetry: {e}")
-        return 'Failed to update telemetry', 500
-
-@app.route("/send_waypoints", methods=["POST"])
-def send_waypoints():
-    try:
-        print(f"Sending waypoints: {waypoints}")
-        res = requests.post(PI_IP, json={"waypoints": waypoints}, timeout=1)
-        return "Waypoints sent", 200
-    except Exception as e:
-        print(f"failed to send waypoints: {e}")
+        app.logger.error(f"Failed to send waypoints: {e}")
         return 'Error sending waypoints', 500
 
 @app.route("/blimp_position")

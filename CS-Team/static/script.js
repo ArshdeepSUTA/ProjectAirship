@@ -93,38 +93,94 @@ function sendManualCommand() {
 
 let waypoints = [];
 let blimpMarker = null;
-let map = L.map('map').setView([32.731, -97.110], 16); // Replace with UTA or your default
+let polyline = null;
+let arrowDecorator = null;
 
+let map = L.map('map').setView([32.731, -97.110], 16); // Replace with UTA or your default
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19,}).addTo(map);
 
 // Add waypoint on click
 map.on('click', function(e) {
-    const lat = e.latlng.lat;
-    const lng = e.latlng.lng;
+    var lat = e.latlng.lat;
+    var lng = e.latlng.lng;
 
     // Add waypoint marker
-    L.marker([lat, lng], { title: "Waypoint" }).addTo(map);
-    waypoints.push({ lat, lng });
+    L.marker([lat, lng]).addTo(map).bindPopup("Waypoint<br>Lat: "+lat.toFixed(5)+"<br>Lng: "+lng.toFixed(5)).openPopup();
 
+    waypoints.push({lat:lat, lng:lng});
 
-    // Send waypoint to Flask
-    fetch('/waypoints', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng })
-    }).then(response => {
-        if (response.ok) {
-            console.log('Waypoint sent');
-        } else {
-            console.error('Failed to send waypoint');
-        }
-    });
+    console.log("Current waypoints:", waypoints);
+
+    if (polyline) map.removeLayer(polyline);
+    if (arrowDecorator) map.removeLayer(arrowDecorator);
+
+    polyline = L.polyline(waypoints, { color: 'blue' }).addTo(map);
+
 });
 
-function fetchTelemetry() {
-    fetch('/get_blimp_position')  // optional: if you make a new GET endpoint
+function sendWaypoints() {
+    if (waypoints.length === 0) {
+        alert("No waypoints to send");
+    }
+    else {
+        fetch('/send_waypoints', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(waypoints)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert("Waypoints sent to the blimp")
+                console.log("Waypoints sent:",waypoints);
+                waypoints = [];
+            }
+            else {
+                alert("Failed to send waypoints");
+            }
+        })
+        .catch(err => {
+            console.error("Error sending waypoints", err)
+        });
+    }
+}
+function updateData() {
+    fetch('/update_telemetry', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Send an empty JSON payload
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            console.error('Failed to update telemetry');
+        }
+    })
+    .then(data => {
+        if (data) {
+            // Update the telemetry section dynamically
+            document.querySelector('.telemetry p:nth-child(2)').textContent = `Latitude: ${data.lat}`;
+            document.querySelector('.telemetry p:nth-child(3)').textContent = `Longitude: ${data.lon}`;
+            document.querySelector('.telemetry p:nth-child(4)').textContent = `Altitude: ${data.alt}`;
+            document.querySelector('.telemetry p:nth-child(5)').textContent = `Battery: ${data.battery_level}`;
+            document.querySelector('.telemetry p:nth-child(6)').textContent = `Yaw: ${data.heading}`;
+            console.log(data);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Automatically update telemetry every 2 seconds
+//setInterval(updateData, 2000);
+
+function blimpPosition() {
+    fetch('/blimp_position')
         .then(response => response.json())
         .then(pos => {
+            if (!pos.lat || !pos.long) return;  // sanity check
+            
             if (blimpMarker) {
                 blimpMarker.setLatLng([pos.lat, pos.long]);
             } else {
@@ -132,20 +188,7 @@ function fetchTelemetry() {
                     .addTo(map)
                     .bindPopup("Blimp Location");
             }
-        });
+        })
+        .catch(err => console.error("Error fetching blimp position:", err));
 }
-
-// Poll every 2 seconds (or hook this into your existing AJAX telemetry update)
-//setInterval(fetchTelemetry, 2000);
-
-function sendWaypoints() {
-    fetch('/send_waypoints', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(waypoints)
-    })
-    .then(response => {
-        if (response.ok) alert("Waypoints sent to the blimp!");
-        else alert("Failed to send waypoints.");
-    });
-}
+setInterval(blimpPosition, 2000);

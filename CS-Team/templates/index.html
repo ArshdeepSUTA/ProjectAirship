@@ -5,7 +5,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.polylinedecorator/1.7.0/leaflet.polylineDecorator.min.js"></script>
+
 </head>
 <body>
     <h1>Airship Ground Station</h1>
@@ -51,10 +54,11 @@
         <p>Altitude: {{ telemetry.alt }}</p>
         <p>Battery: {{ telemetry.battery }}</p>
         <p>Yaw: {{ telemetry.yaw }}</p>
+        <button onclick="updateData()">Update Data</button>
     </div>
 
     <div class="video_feed">
-        <img id="video-stream" src="http://171.20.10.5:8080/video_feed" width="640" height="480" alt="Video feed not available">
+        <img id="video-stream" src="http://192.168.4.1:5000/video_feed" width="640" height="480" alt="Video feed not available">
     </div>
 
     <div id="map" style="height: 400px; width: 600px; margin: 20px auto;"></div>

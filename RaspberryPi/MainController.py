@@ -5,6 +5,17 @@ import uart
 import gps_hat
 import pid
 
+import math
+
+waypoints = [
+    # sample coordinates, replace with real waypoints
+    (32.731, -97.115),
+    (32.732, -97.116),
+    (32.733, -97.117),
+]
+current_waypoint_index = 0
+ARRIVAL_TOLERANCE = 0.0002  # tweak as needed (approx ~20m)
+
 #---- THREAD MUTEX FOR WRITING TO GPS DATA ----
 blimp_data_lock = threading.Lock() 
 
@@ -87,6 +98,67 @@ def PIDController():
         time.sleep(1)
 
 
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000  # Earth radius in meters
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    d_phi = math.radians(lat2 - lat1)
+    d_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(d_phi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c
+
+def bearing_to(lat1, lon1, lat2, lon2):
+    dLon = math.radians(lon2 - lon1)
+    y = math.sin(dLon) * math.cos(math.radians(lat2))
+    x = math.cos(math.radians(lat1)) * math.sin(math.radians(lat2)) - math.sin(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.cos(dLon)
+    return (math.degrees(math.atan2(y, x)) + 360) % 360
+
+def WaypointNavigator():
+    global current_waypoint_index
+
+    while True:
+        with blimp_data_lock:
+            lat = Flaskapp.blimp_data.get("lat")
+            lon = Flaskapp.blimp_data.get("lon")
+            heading = Flaskapp.blimp_data.get("heading")
+
+        if lat is None or lon is None or heading is None:
+            time.sleep(1)
+            continue
+
+        if current_waypoint_index >= len(waypoints):
+            print("All waypoints reached.")
+            continue
+
+        target_lat, target_lon = waypoints[current_waypoint_index]
+        distance = haversine(lat, lon, target_lat, target_lon)
+
+        # Arrived at waypoint
+        if distance < ARRIVAL_TOLERANCE * 111000:  # convert degrees to meters approx
+            print(f"Reached waypoint {current_waypoint_index + 1}")
+            current_waypoint_index += 1
+            continue
+
+        desired_heading = bearing_to(lat, lon, target_lat, target_lon)
+        heading_diff = (desired_heading - heading + 360) % 360
+        if heading_diff > 180:
+            heading_diff -= 360  # now between -180 and 180
+
+        with blimp_data_lock:
+            if abs(heading_diff) > 10:
+                # turn towards target
+                Flaskapp.control_commands['rudder_angle'] = 120 if heading_diff > 0 else 60
+                Flaskapp.control_commands['motor_speed_A'] = 0
+                Flaskapp.control_commands['motor_speed_B'] = 0
+            else:
+                # go forward
+                Flaskapp.control_commands['rudder_angle'] = 90
+                Flaskapp.control_commands['motor_speed_A'] = 100
+                Flaskapp.control_commands['motor_speed_B'] = 100
+
+        time.sleep(1)
 
 # --- thread functions: Starting threads for gps, flask, uart read/write, pid controller ---
 def start_gps_thread():
