@@ -1,6 +1,7 @@
 ### Initial requirements
 ### Make sure you have a version of python3
 ### Enter each of the following lines individually to set up virtual environment (ONLY do this the first time)
+### Make sure you are in the CS-Team directory
 
 sudo apt install python3.10-venv
 python3 -m venv env

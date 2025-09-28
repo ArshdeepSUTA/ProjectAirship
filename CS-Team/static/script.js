@@ -1,4 +1,3 @@
-let currentKey = null;
 const keyToId = {
     'ArrowUp': 'forward',
     'ArrowLeft': 'left',
@@ -81,34 +80,14 @@ document.addEventListener('keyup', function (event) {
     if (box) box.classList.remove('active');
 });
 
-window.addEventListener('keydown', (event) => {
-    const key = event.key.toLowerCase();
-    const id = keyToId[key] || keyToId[event.key];
-    if (id && !activeKeys.has(id)) {
-        activeKeys.add(id);
-        const box = document.getElementById(id);
-        if (box) box.classList.add('active');
-    }
-});
-
-window.addEventListener('keyup', (event) => {
-    const key = event.key.toLowerCase();
-    const id = keyToId[key] || keyToId[event.key];
-    if (id) {
-        activeKeys.delete(id);
-        const box = document.getElementById(id);
-        if (box) box.classList.remove('active');
-    }
-});
-
 function sendManualCommand() {
     const left = document.getElementById('left-motor').value;
     const right = document.getElementById('right-motor').value;
     const altitude = document.getElementById('target-altitude').value;
 
     const formData = new URLSearchParams();
-    formData.append('left_motor', left);
-    formData.append('right_motor', right);
+    formData.append('left', left);
+    formData.append('right', right);
     formData.append('target_altitude', altitude);
 
     fetch('/manual', {
@@ -179,52 +158,40 @@ function sendWaypoints() {
         });
     }
 }
-function updateData() {
-    fetch('/update_telemetry', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}) // Send an empty JSON payload
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
+
+const socket = io();
+
+socket.on("connect", () => {
+    console.log("Connected to server via WebSocket");
+});
+
+socket.on("telemetry_update", data => {
+    console.log("Telemetry update:", data);
+
+    // Find telemetry container
+    const telemetryDiv = document.querySelector(".blimp_data");
+    telemetryDiv.innerHTML = ""; // clear old values
+
+    // Render telemetry dictionary
+    Object.entries(data).forEach(([key, value]) => {
+        const p = document.createElement("p");
+        p.textContent = `${key}: ${JSON.stringify(value)}`;
+        telemetryDiv.appendChild(p);
+    });
+
+    // Update blimp marker if GPS exists
+    if (data.lat && data.lon) {
+        const { lat, lon } = data;
+        if (blimpMarker) {
+            blimpMarker.setLatLng([lat, lon]);
         } else {
-            console.error('Failed to update telemetry');
+            blimpMarker = L.marker([lat, lon], { color: 'red' })
+                .addTo(map)
+                .bindPopup("Blimp Location");
         }
-    })
-    .then(data => {
-        if (data) {
-            // Update the telemetry section dynamically
-            document.querySelector('.telemetry p:nth-child(2)').textContent = `Latitude: ${data.lat}`;
-            document.querySelector('.telemetry p:nth-child(3)').textContent = `Longitude: ${data.lon}`;
-            document.querySelector('.telemetry p:nth-child(4)').textContent = `Altitude: ${data.alt}`;
-            document.querySelector('.telemetry p:nth-child(5)').textContent = `Battery: ${data.battery_level}`;
-            document.querySelector('.telemetry p:nth-child(6)').textContent = `Yaw: ${data.heading}`;
-            console.log(data);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+    }
+});
 
-// Automatically update telemetry every 2 seconds
-//setInterval(updateData, 2000);
-
-function blimpPosition() {
-    fetch('/blimp_position')
-        .then(response => response.json())
-        .then(pos => {
-            if (!pos.lat || !pos.long) return;  // sanity check
-            
-            if (blimpMarker) {
-                blimpMarker.setLatLng([pos.lat, pos.long]);
-            } else {
-                blimpMarker = L.marker([pos.lat, pos.long], { color: 'red' })
-                    .addTo(map)
-                    .bindPopup("Blimp Location");
-            }
-        })
-        .catch(err => console.error("Error fetching blimp position:", err));
-}
-//setInterval(blimpPosition, 2000);
+socket.on("disconnect", () => {
+    console.warn("Disconnected from server");
+});

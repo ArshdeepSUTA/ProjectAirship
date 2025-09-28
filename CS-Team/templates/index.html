@@ -8,6 +8,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.polylinedecorator/1.7.0/leaflet.polylineDecorator.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 </head>
 <body>
@@ -53,14 +54,17 @@
         <button onclick="sendManualCommand()">Send Command</button>
     </div>
 
-    <div class="telemetry">
-        <h3>Telemetry</h3>
-        <p>Latitude: {{ telemetry.lat }}</p>
-        <p>Longitude: {{ telemetry.lon }}</p>
-        <p>Altitude: {{ telemetry.alt }}</p>
-        <p>Battery: {{ telemetry.battery }}</p>
-        <p>Yaw: {{ telemetry.yaw }}</p>
-        <button onclick="updateData()">Update Data</button>
+    <div class="blimp_data">
+        <h3>Blimp Telemetry</h3>
+        <p>Battery: <span id="battery"></span>%</p>
+        <p>Accel: (<span id="ax"></span>, <span id="ay"></span>, <span id="az"></span>)</p>
+        <p>Gyro: (<span id="gx"></span>, <span id="gy"></span>, <span id="gz"></span>)</p>
+        <p>Mag: (<span id="mx"></span>, <span id="my"></span>, <span id="mz"></span>)</p>
+        <p>Distance (LIDAR): <span id="distance"></span> m</p>
+        <p>GPS: lat <span id="lat"></span>, lon <span id="lon"></span>, alt <span id="alt"></span> m</p>
+        <p>Speed: <span id="speed"></span> m/s</p>
+        <p>Climb: <span id="climb"></span> m/s</p>
+        <p>Heading: <span id="heading"></span>°</p>
     </div>
 
     <div class="video_feed">
