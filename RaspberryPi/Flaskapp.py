@@ -59,7 +59,8 @@ def video_feed():
 #blimp data to respond to get commands
 #add more data points after setup on sensors
 blimp_data = {
-    "battery_level": 100,
+    "Battery": 100,
+    "Current": 0,
     #IMU DATA
     "Accel_X": 0.0,
     "Accel_Y": 0.0,
