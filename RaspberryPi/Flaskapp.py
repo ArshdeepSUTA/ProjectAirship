@@ -59,8 +59,7 @@ def video_feed():
 #blimp data to respond to get commands
 #add more data points after setup on sensors
 blimp_data = {
-    "Battery": 100,
-    "Current": 0,
+
     #IMU DATA
     "Accel_X": 0.0,
     "Accel_Y": 0.0,
@@ -80,7 +79,15 @@ blimp_data = {
     "speed": 0.0,
     "climb": 0.0,
     "heading": 0.0,
-    "startFlag" : 0
+    "startFlag" : 0,
+
+    #return data from arduino
+    "left": 0,
+    "right": 0,
+    "backleft": 0,
+    "backright": 0,
+    "Battery": 100,
+    "Current": 0,
 }
 
 

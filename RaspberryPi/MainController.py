@@ -97,7 +97,7 @@ def PIDController():
         # short delay
         time.sleep(1)
 
-
+# -------------------- auto nav algorithm functions -------------------------
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371000  # Earth radius in meters
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         time.sleep(0.1)
 
     # --- Start GPS ----
-    #gps_thread = start_gps_thread()
+    gps_thread = start_gps_thread()
 
     # --- Start UART read and write threads ----
     uart_thread = start_uart_reader_thread()
