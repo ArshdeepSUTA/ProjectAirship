@@ -3,7 +3,7 @@ import threading
 import queue
 
 # --- Initialize PID controller state on startup ---
-def init_pid(Kp, Ki, Kd, setpoint, output_limits=(0, 180)):
+def init_pid(Kp, Ki, Kd, setpoint, output_limits=(0, 100)):
     """
     initialize pid controller parameters.
     kp - proportional gain

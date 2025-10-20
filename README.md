@@ -9,8 +9,10 @@ This is an autonomous blimp project - created to simlate commercial air transpor
 In the servoTimers.h file, comment out #define _userTimer3. This timer is used for the interrupt on the arduino. 
 This file is usually located in documents/Arduino
 
+The password for the BLIMP network:
+raspberry123
 
-
+The password for the BLIMP itself is in the discord. Pinned.
 
 
 

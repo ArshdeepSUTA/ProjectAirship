@@ -8,9 +8,11 @@ from datetime import datetime, timedelta
 def gps_connect():
     try:
         gpsd.connect()
-        print("GPS Connected")
+        print("GPS Connecting...")
     except gpsd.NoFixError:
         print("Error: no fix")
+        time.sleep(5)
+        gps_connect()       #retry connection
     except Exception as e:
         print(f"Couldn't connect to GPSD due to {e}")
 
