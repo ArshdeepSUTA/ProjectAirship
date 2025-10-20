@@ -91,8 +91,8 @@ def PIDController():
         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["alt"])
 
         with blimp_data_lock:
-            Flaskapp.control_commands['frontleft'] = int(output)
-            Flaskapp.control_commands['frontright'] = int(output)
+            Flaskapp.control_commands['backleft'] = int(output)
+            Flaskapp.control_commands['backright'] = int(output)
 
         # short delay
         time.sleep(1)

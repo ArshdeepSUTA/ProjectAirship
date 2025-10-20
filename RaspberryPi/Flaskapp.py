@@ -97,8 +97,8 @@ blimp_data = {
 control_commands = {
     "left": 0,  
     "right": 0,
-    "frontleft": 0,
-    "frontright": 0,
+    "backleft": 0,
+    "backright": 0,
     "stop": 0,   
     "target_altitude": 20.0
 }
@@ -174,7 +174,7 @@ def receive_command():
             control_commands["right"] = 0
         elif cmd == "start-blimp":
             blimp_data["startFlag"] = 1
-        elif cmd == "stop-bllimp":
+        elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
         return "OK", 200
     return "No command received", 400
