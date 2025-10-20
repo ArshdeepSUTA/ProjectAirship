@@ -13,6 +13,6 @@ The password for the BLIMP network:
 raspberry123
 
 The password for the BLIMP itself is in the discord. Pinned.
-
+username for it is asark
 
 
