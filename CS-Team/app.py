@@ -10,9 +10,9 @@ app = Flask(__name__)
 
 socketio = SocketIO(app, cors_allowed_origins="*")  # enable websockets
 
-PI_IP = "http://127.0.0.1:6000" #mock server for testing
+#PI_IP = "http://127.0.0.1:6000" #mock server for testing
 #PI_IP = "http://192.168.4.1:5000/command"  # Replace with your Pi's IP
-#PI_IP = "http://192.168.4.1:5000"
+PI_IP = "http://192.168.4.1:5000"
 
 blimp_location = {"lat":32.731, "long":-97.110}
 waypoints = []
@@ -20,17 +20,48 @@ waypoints = []
 data_lock = Lock()
 
 blimp_data = {
-    "Accel_X": 0, "Accel_Y": 0, "Accel_Z": 0,
-    "Battery": 0, "Current": 0,
-    "Gyro_X": 0, "Gyro_Y": 0, "Gyro_Z": 0,
-    "Heading": 0, "Lidar_Distance": 0,
-    "Mag_X": 0, "Mag_Y": 0, "Mag_Z": 0,
-    "alt": 0, "climb": 0, "distance": 0,
-    "frontleft": 0, "frontright": 0, "heading": 0,
-    "lat": 0, "left": 0, "lon": 0, "right": 0,
-    "speed": 0, "startFlag": 0, "stop": 0,
-    "target_altitude": 0, "target_altitudleft": 0,
-    "value = left": 0
+    # #"Accel_X": 0, "Accel_Y": 0, "Accel_Z": 0,
+    # "Battery": 0, "Current": 0,
+    # #"Gyro_X": 0, "Gyro_Y": 0, "Gyro_Z": 0,
+    # "heading": 0, "Lidar_Distance": 0,
+    # #"Mag_X": 0, "Mag_Y": 0, "Mag_Z": 0,
+    # "alt": 0, "climb": 0, "distance": 0,
+    # "imu-heading": 0,
+    # "backleft-motor": 0, "backright-motor": 0, "heading": 0,
+    # "lat": 0, "left-motor": 0, "lon": 0, "right-motor": 0,
+    # "speed": 0, "startFlag": 0, "stop": 0,
+    # "target_altitude": 0, "target_altitudleft": 0,
+    # "value = left": 0
+    # #IMU DATA
+    "imu-heading": 0,
+    # "Accel_X": 0.0,
+    # "Accel_Y": 0.0,
+    # "Accel_Z": 0.0,
+    # "Mag_X": 0.0,
+    # "Mag_Y": 0.0,
+    # "Mag_Z": 0.0,
+    # "Gyro_X": 0.0,
+    # "Gyro_Y": 0.0,
+    # "Gyro_Z": 0.0,
+    #LIDAR DATA
+    "distance": 0,
+    #GPS DATA
+    "lat": 0.0,
+    "lon": 0.0,
+    "alt": 0.0,
+    "speed": 0.0,
+    "climb": 0.0,
+    "heading": 0.0,
+    "startFlag" : 0,
+
+    #return data from arduino
+    
+    "backleft-motor": 0,
+    "backright-motor": 0,
+    "left-motor": 0,
+    "right-motor": 0,
+    "battery": 100,
+    "current": 0
 }
 
 @app.route('/')
@@ -100,21 +131,31 @@ def blimp_position():
 # Background thread to fetch telemetry and broadcast updates
 def telemetry_updater():
     global blimp_data
+    last_sent = {}
     while True:
         try:
             res = requests.get(f"{PI_IP}/blimp-status", timeout=3)
-            #res = requests.get(PI_IP.replace("/command", "/blimp-status"), timeout=3)
-            #data = request.get_json()
-            #print(data)
             if res.status_code == 200:
                 new_data = res.json()
-                print("----new data",new_data)
-                #with data_lock:
-                blimp_data.update(new_data)
-                latest = blimp_data.copy()
-                print("    ******Updated blimp_data:", latest)
-                socketio.emit("telemetry_update", latest)  # push to clients
-                app.logger.info(f"Broadcast telemetry: {latest}")
+                #print("----new data",new_data)
+                
+                changed = any(new_data.get(k) != last_sent.get(k) for k in new_data)
+                
+                if changed:
+                    blimp_data.update(new_data)
+                    latest = blimp_data.copy()
+                    
+                    socketio.emit("telemetry_update", latest)
+                    last_sent = latest
+                    
+                    app.logger.info(f"Broadcast telemetry: {latest}")
+                    
+                # #with data_lock:
+                # blimp_data.update(new_data)
+                # latest = blimp_data.copy()
+                # #print("    ******Updated blimp_data:", latest)
+                # socketio.emit("telemetry_update", latest)  # push to clients
+                # app.logger.info(f"Broadcast telemetry: {latest}")
             else:
                 app.logger.error(f"Failed to fetch telemetry: {res.status_code}")
         except Exception as e:
@@ -128,6 +169,6 @@ def handle_connect():
     emit("telemetry_update", blimp_data)  # send current data immediately on connect
 
 if __name__ == '__main__':
-    #socketio.start_background_task(telemetry_updater)
-    threading.Thread(target=telemetry_updater, daemon=True).start()
+    socketio.start_background_task(telemetry_updater)
+    #threading.Thread(target=telemetry_updater, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)

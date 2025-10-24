@@ -81,14 +81,14 @@ document.addEventListener('keyup', function (event) {
 });
 
 function sendManualCommand() {
-    const left = document.getElementById('left-motor').value;
-    const right = document.getElementById('right-motor').value;
-    const altitude = document.getElementById('target-altitude').value;
+    const left = document.getElementById('left-manual').value;
+    const right = document.getElementById('right-manual').value;
+    const altitude = document.getElementById('Taltitude').value;
 
     const formData = new URLSearchParams();
     formData.append('left', left);
     formData.append('right', right);
-    formData.append('target_altitude', altitude);
+    formData.append('Taltitude', altitude);
 
     fetch('/manual', {
         method: 'POST',
@@ -160,12 +160,15 @@ function sendWaypoints() {
 }
 
 const socket = io();
+let socketConnected = false;
 
 socket.on("connect", () => {
     console.log("Connected to server via WebSocket");
+    socketConnected = true;
 });
 
 socket.on("telemetry_update", data => {
+    socketConnected = true;
     console.log("Telemetry update:", data);
 
     // Find telemetry container
@@ -194,5 +197,22 @@ socket.on("telemetry_update", data => {
 });
 
 socket.on("disconnect", () => {
+    socketConnected = false;
     console.warn("Disconnected from server");
 });
+
+setInterval(() => {
+  if (!socketConnected) {
+    fetch("/blimp_position")
+      .then(res => res.json())
+      .then(data => updateTelemetryDisplay(data))
+      .catch(err => console.error("Polling error:", err));
+  }
+}, 5000);
+
+function updateTelemetryDisplay(data) {
+  Object.entries(data).forEach(([key, val]) => {
+    const el = document.getElementById(key);
+    if (el) el.textContent = val;
+  });
+}

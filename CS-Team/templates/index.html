@@ -43,13 +43,13 @@
     <div id="motor-strength">
         <h3>Manual Controls</h3>
         <label>Left Motor Strength:
-            <input type="number" id="left-motor" min="0" max="180">
+            <input type="number" id="left-manual" min="0" max="180">
         </label><br>
         <label>Right Motor Strength:
-            <input type="number" id="right-motor" min="0" max="180">
+            <input type="number" id="right-manual" min="0" max="180">
         </label><br>
         <label>Target Altitude:
-            <input type="number" id="target-altitude" step="0.1">
+            <input type="number" id="Taltitude" step="0.1">
         </label><br>
         <button onclick="sendManualCommand()">Send Command</button>
     </div>
@@ -57,26 +57,20 @@
     <div class="blimp_data">
         <h3>Blimp Telemetry</h3>
         
-        <p>Accel: (<span id="Accel_X"></span>, <span id="Accel_Y"></span>, <span id="Accel_Z"></span>)</p>
-        <p>Battery: <span id="Battery"></span>%</p>
-        <p>Current: <span id="Current"></span> A</p>
-        <p>Gyro: (<span id="Gyro_X"></span>, <span id="Gyro_Y"></span>, <span id="Gyro_Z"></span>)</p>
-        <p>Mag: (<span id="Mag_X"></span>, <span id="Mag_Y"></span>, <span id="Mag_Z"></span>)</p>
-        <p>Heading: <span id="Heading"></span>° | heading (lowercase): <span id="heading"></span>°</p>
-        <p>LIDAR Distance: <span id="Lidar_Distance"></span> m</p>
-        <p>Distance (dar): <span id="distance"></span> m</p>
+        <p>Battery: <span id="battery"></span>%</p>
+        <p>Current: <span id="current"></span> A</p>
+        <p>Heading: <span id="heading"></span>° | IMU-Heading: <span id="imu-heading"></span>°</p>
+        <p>LIDAR Distance: <span id="distance"></span> m</p>
         <p>GPS: lat <span id="lat"></span>, lon <span id="lon"></span>, alt <span id="alt"></span> m</p>
         <p>Speed: <span id="speed"></span> m/s</p>
         <p>Climb: <span id="climb"></span> m/s</p>
-        <p>Back Left: <span id="backleft"></span>% | Back Right: <span id="backright"></span>%</p>
-        <p>Left: <span id="left"></span>% | Right: <span id="right"></span>%</p>
-        <p>Start Flag: <span id="startFlag"></span> | Stop: <span id="stop"></span></p>
-        <p>Target Altitude: <span id="target_altitude"></span> m | Target Altitudleft: <span id="target_altitudleft"></span></p>
-        <p>Value (Left): <span id="value = left"></span></p>
+        <p>Back Left: <span id="backleft-motor"></span>% | Back Right: <span id="backright-motor"></span>%</p>
+        <p>Left: <span id="left-motor"></span>% | Right: <span id="right-motor"></span>%</p>
+        <p>Start Flag: <span id="startFlag"></span> </p>
     </div>
 
-    <div class="video_feed">
-        <img id="video-stream" src="http://192.168.4.1:5000/video_feed" width="640" height="480" alt="Video feed not available">
+    <div class="video">
+        <img src="http://192.168.4.1:5000/video_feed" width="640" height="480" />
     </div>
 
     <div id="map" style="height: 400px; width: 600px; margin: 20px auto;"></div>
