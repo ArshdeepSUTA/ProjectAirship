@@ -18,13 +18,20 @@ curl -X POST -d "command=left" http://192.168.4.1:5000/command
 app = Flask(__name__)
 
 # --- PI Camera and video generation
-# camera = Picamera2()
+camera = Picamera2()
 
-# # #camera config --- uncomment when camera is plugged in
-# camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
-# camera.configure(camera_config)
-# camera.start()
+# #camera config --- uncomment when camera is plugged in
+camera_config = camera.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+camera.configure(camera_config)
+camera.start()
 
+# ------ Info for distance calculation using pinhole formula: distance = real width * focal length / pixel width ----- 
+# Known real-world object width in cm 
+# TODO: adjust based on landing pad 
+KNOWN_WIDTH_CM = 30.0 
+
+# Approximate focal length in pixels ( describes how zoomed in the camera is )
+FOCAL_LENGTH_PX = 615.0  # known estimate based on pi camera 
 
 # --- Generate Frames ---
 def generate_frames():
@@ -36,6 +43,70 @@ def generate_frames():
         #convert to BGR for cv2
         frameBGR = cv2.cvtColor(vidFrame, cv2.COLOR_RGB2BGR)
 
+        # ----- START OF COMPUTER VISION LOGIC -----
+        gray = cv2.cvtColor(frameBGR, cv2.COLOR_BGR2GRAY)  # convert to grayscale
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)  # small blur to reduce noise
+        
+        edges = cv2.Canny(gray, 50, 150)  # edge detection + light clean up v
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)) #smooth out small gaps in edges (better contour detection)
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1) #smooth out small gaps in edges (better contour detection)
+        
+
+         # --- Find contours
+        contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        flat_ground_detected = False
+        estimated_distance_cm = None # initialize so its always defined
+        H, W = frameBGR.shape[:2] 
+        
+        # dynamic thresholds based on image size
+        min_area = 0.01 * (H * W) # ignore small areas (< 1% of image)
+        
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < min_area:
+                continue
+            
+            # Convexity/solidity filter to prevent false positives 
+            hull = cv2.convexHull(cnt)
+            hull_area = cv2.contourArea(hull)
+            if hull_area == 0:
+                continue
+            solidity = area / float(hull_area)
+            if solidity < 0.85:
+                continue  # reject ragged/holey shapes
+
+            x, y, w, h = cv2.boundingRect(cnt)
+            if w == 0 or h == 0:
+                continue
+
+            aspect_ratio = w / float(h)
+
+            # For downward-facing camera, look for roughly square regions (landing pad-like)
+            if 0.7 <= aspect_ratio <= 1.3:  # close to square
+                cv2.rectangle(frameBGR, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                flat_ground_detected = True
+
+                # Estimate distance using pinhole model 
+                estimated_distance_cm = (KNOWN_WIDTH_CM * FOCAL_LENGTH_PX) / float(max(w, h))
+                print(f"Landing pad detected. Estimated distance: {estimated_distance_cm:.2f} cm")
+
+                break  # stop after first valid pad found
+
+        # --- Overlay feedback (for landing pad and flat ground) ---
+        if flat_ground_detected:
+            label = (
+                f"Landing Pad Detected - Dist: {estimated_distance_cm:.1f} cm"
+                if estimated_distance_cm else "Landing Pad Detected"
+            )
+            cv2.putText(frameBGR, label, (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        else:
+            cv2.putText(frameBGR, "Searching for Landing Pad...",
+                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+        # ----- END OF COMPUTER VISION LOGIC -----
+
         #JPG encoding
         ret, buffer = cv2.imencode('.jpg', frameBGR)
 
@@ -46,7 +117,7 @@ def generate_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frameBytes + b'\r\n')
 
         #time delay for cpu usage. added for 20fps
-        time.sleep(0.05)
+        time.sleep(0.1)
 
 
 @app.route('/video_feed')
@@ -60,16 +131,17 @@ def video_feed():
 #add more data points after setup on sensors
 blimp_data = {
 
-    #IMU DATA
-    "Accel_X": 0.0,
-    "Accel_Y": 0.0,
-    "Accel_Z": 0.0,
-    "Mag_X": 0.0,
-    "Mag_Y": 0.0,
-    "Mag_Z": 0.0,
-    "Gyro_X": 0.0,
-    "Gyro_Y": 0.0,
-    "Gyro_Z": 0.0,
+    # #IMU DATA
+    "imu-heading": 0,
+    # "Accel_X": 0.0,
+    # "Accel_Y": 0.0,
+    # "Accel_Z": 0.0,
+    # "Mag_X": 0.0,
+    # "Mag_Y": 0.0,
+    # "Mag_Z": 0.0,
+    # "Gyro_X": 0.0,
+    # "Gyro_Y": 0.0,
+    # "Gyro_Z": 0.0,
     #LIDAR DATA
     "distance": 0,
     #GPS DATA
@@ -82,12 +154,12 @@ blimp_data = {
     "startFlag" : 0,
 
     #return data from arduino
-    "left": 0,
-    "right": 0,
-    "backleft": 0,
-    "backright": 0,
-    "Battery": 100,
-    "Current": 0,
+    "left-motor": 0,
+    "right-motor": 0,
+    "backleft-motor": 0,
+    "backright-motor": 0,
+    "battery": 100,
+    "current": 0
 }
 
 
@@ -95,12 +167,13 @@ blimp_data = {
 #control commands reiceved from laptop
 #add controls
 control_commands = {
-    "left": 0,  
-    "right": 0,
-    "backleft": 0,
-    "backright": 0,
+    "temp": 1234,
+    "left-motor": 0,  
+    "right-motor": 0,
+    "backleft-motor": 0,
+    "backright-motor": 0,
     "stop": 0,   
-    "target_altitude": 20.0
+    "Taltitude": 20.0
 }
 
 # index route
@@ -135,10 +208,10 @@ def receive_control_commands():
         received_json = request.get_json()
 
         #update variables in controls object - added key error protection
-        control_commands["left"] = received_json.get("left", control_commands["left"])
-        control_commands["right"] = received_json.get("right", control_commands["right"])
+        control_commands["left-motor"] = received_json.get("left", control_commands["left"])
+        control_commands["right-motor"] = received_json.get("right", control_commands["right"])
         control_commands["stop"] = received_json.get("stop", control_commands["stop"])
-        control_commands["target_altitude"] = received_json.get("target_altitude", control_commands["target_altitude"])
+        control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
         print(f"Updated control state: {control_commands}")
@@ -155,23 +228,23 @@ def receive_command():
     if cmd:
         print(f"Received command: {cmd}")
         if cmd == "left":               # turn left - speed 50
-            control_commands["left"] = 50
-            control_commands["right"] = 0
+            control_commands["left-motor"] = 50
+            control_commands["right-motor"] = 0
         elif cmd == "right":            # turn right - speed 50  
-            control_commands["left"] = 0
-            control_commands["right"] = 50
+            control_commands["left-motor"] = 0
+            control_commands["right-motor"] = 50
         elif cmd == "forward":          # move forward - both motors at speed 50
-            control_commands["left"] = 50
-            control_commands["right"] = 50
+            control_commands["left-motor"] = 50
+            control_commands["right-motor"] = 50
         elif cmd == "stop-forward":     # stop both motors 
-            control_commands["left"] = 0
-            control_commands["right"] = 0
+            control_commands["left-motor"] = 0
+            control_commands["right-motor"] = 0
         elif cmd == "stop-left":        # stop left motor
-            control_commands["left"] = 0
-            control_commands["right"] = 0
+            control_commands["left-motor"] = 0
+            control_commands["right-motor"] = 0
         elif cmd == "stop-right":       # stop right motor
-            control_commands["left"] = 0
-            control_commands["right"] = 0
+            control_commands["left-motor"] = 0
+            control_commands["right-motor"] = 0
         elif cmd == "start-blimp":
             blimp_data["startFlag"] = 1
         elif cmd == "stop-blimp":

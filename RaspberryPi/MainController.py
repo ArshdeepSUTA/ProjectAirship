@@ -77,22 +77,21 @@ def arduinoWriter():
             commands = Flaskapp.control_commands.copy()
             for key, value in commands.items():
                 uart.writeArduinoCommmand(key, f"{value}")
-
         time.sleep(1)  # Adjust as needed
 
 # ---- PID controller thread ----
 def PIDController():
     # Initialize PID controller
-    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['target_altitude'], output_limits=(0, 50))
+    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['Taltitude'], output_limits=(0, 50))
     
     while True:
-        pid.set_altitude(pid_controller, Flaskapp.control_commands['target_altitude'])
+        pid.set_altitude(pid_controller, Flaskapp.control_commands['Taltitude'])
         # Update PID with current altitude
         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["alt"])
 
         with blimp_data_lock:
-            Flaskapp.control_commands['backleft'] = int(output)
-            Flaskapp.control_commands['backright'] = int(output)
+            Flaskapp.control_commands['backleft-motor'] = int(output)
+            Flaskapp.control_commands['backright-motor'] = int(output)
 
         # short delay
         time.sleep(1)
@@ -207,10 +206,10 @@ if __name__ == '__main__':
         time.sleep(0.1)
 
     # --- Start GPS ----
-    gps_thread = start_gps_thread()
+    #gps_thread = start_gps_thread()
     # --- Start UART read and write threads ----
-    #uart_thread = start_uart_reader_thread()
-    #arduino_thread = start_arduino_writer_thread()
+    uart_thread = start_uart_reader_thread()
+    arduino_thread = start_arduino_writer_thread()
     # --- Start PID controller thread ----
     #pid_thread = start_pid_thread()
 
