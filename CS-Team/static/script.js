@@ -169,14 +169,15 @@ socket.on("telemetry_update", data => {
     console.log("Telemetry update:", data);
 
     // Find telemetry container
-    const telemetryDiv = document.querySelector(".blimp_data");
-    telemetryDiv.innerHTML = ""; // clear old values
+    //const telemetryDiv = document.querySelector(".blimp_data");
+    //telemetryDiv.innerHTML = ""; // clear old values
 
     // Render telemetry dictionary
     Object.entries(data).forEach(([key, value]) => {
-        const p = document.createElement("p");
-        p.textContent = `${key}: ${JSON.stringify(value)}`;
-        telemetryDiv.appendChild(p);
+        const p = document.getElementById(key);
+        if (p) {
+            p.textContent = value;
+        }
     });
 
     // Update blimp marker if GPS exists

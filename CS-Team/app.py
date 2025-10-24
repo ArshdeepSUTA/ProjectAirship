@@ -1,37 +1,36 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 import requests, threading, time
+from threading import Lock
 
 app = Flask(__name__)
 
 socketio = SocketIO(app, cors_allowed_origins="*")  # enable websockets
 
-PI_IP = "http://192.168.4.1:5000/command"  # Replace with your Pi's IP
+PI_IP = "http://127.0.0.1:6000" #mock server for testing
+#PI_IP = "http://192.168.4.1:5000/command"  # Replace with your Pi's IP
+#PI_IP = "http://192.168.4.1:5000"
 
 blimp_location = {"lat":32.731, "long":-97.110}
 waypoints = []
 
+data_lock = Lock()
+
 blimp_data = {
-    "battery_level": 100,
-    #IMU DATA
-    "Accel_X": 0.0,
-    "Accel_Y": 0.0,
-    "Accel_Z": 0.0,
-    "Mag_X": 0.0,
-    "Mag_Y": 0.0,
-    "Mag_Z": 0.0,
-    "Gyro_X": 0.0,
-    "Gyro_Y": 0.0,
-    "Gyro_Z": 0.0,
-    #LIDAR DATA
-    "distance": 0,
-    #GPS DATA
-    "lat": 0.0,
-    "lon": 0.0,
-    "alt": 0.0,
-    "speed": 0.0,
-    "climb": 0.0,
-    "heading": 0.0,
+    "Accel_X": 0, "Accel_Y": 0, "Accel_Z": 0,
+    "Battery": 0, "Current": 0,
+    "Gyro_X": 0, "Gyro_Y": 0, "Gyro_Z": 0,
+    "Heading": 0, "Lidar_Distance": 0,
+    "Mag_X": 0, "Mag_Y": 0, "Mag_Z": 0,
+    "alt": 0, "climb": 0, "distance": 0,
+    "frontleft": 0, "frontright": 0, "heading": 0,
+    "lat": 0, "left": 0, "lon": 0, "right": 0,
+    "speed": 0, "startFlag": 0, "stop": 0,
+    "target_altitude": 0, "target_altitudleft": 0,
+    "value = left": 0
 }
 
 @app.route('/')
@@ -45,7 +44,7 @@ def command():
     if cmd:
         app.logger.info(f"Sending command to Pi: {cmd}")
         try:
-            res = requests.post(PI_IP, data={'command': cmd}, timeout=1)
+            res = requests.post(f"{PI_IP}/command", data={'command': cmd}, timeout=1)
             app.logger.info(f"Response from Pi: {res.status_code}")
         except Exception as e:
             app.logger.error(f"Failed to send to Pi: {e}")
@@ -66,7 +65,7 @@ def manual():
         app.logger.info(f"Sending manual control data: {payload}")
 
         # Send JSON to Pi
-        res = requests.post(PI_IP, json=payload, timeout=1)
+        res = requests.post(f"{PI_IP}/command", json=payload, timeout=1)
         app.logger.info(f"Response from Pi: {res.status_code}")
 
         return '', 204
@@ -83,7 +82,7 @@ def send_waypoints():
         if not waypoints:
             return 'No waypoints received', 400
         app.logger.info(f"Sending waypoints to Pi: {waypoints}")
-        res = requests.post(PI_IP + "/waypoints", json=waypoints, timeout=2)
+        res = requests.post(f"{PI_IP}/waypoints", json=waypoints, timeout=2)
         app.logger.info(f"Response from Pi: {res.status_code}")
 
         return '', 204
@@ -103,46 +102,32 @@ def telemetry_updater():
     global blimp_data
     while True:
         try:
-            res = requests.get(PI_IP.replace("/command", "/blimp-data"), timeout=10)
+            res = requests.get(f"{PI_IP}/blimp-status", timeout=3)
+            #res = requests.get(PI_IP.replace("/command", "/blimp-status"), timeout=3)
+            #data = request.get_json()
+            #print(data)
             if res.status_code == 200:
                 new_data = res.json()
+                print("----new data",new_data)
+                #with data_lock:
                 blimp_data.update(new_data)
-                socketio.emit("telemetry_update", blimp_data)  # push to clients
-                app.logger.info(f"Broadcast telemetry: {blimp_data}")
+                latest = blimp_data.copy()
+                print("    ******Updated blimp_data:", latest)
+                socketio.emit("telemetry_update", latest)  # push to clients
+                app.logger.info(f"Broadcast telemetry: {latest}")
+            else:
+                app.logger.error(f"Failed to fetch telemetry: {res.status_code}")
         except Exception as e:
             app.logger.error(f"Telemetry fetch error: {e}")
-        time.sleep(2)  # adjust update rate as needed
-        
-@app.route('/send_test_data', methods=['POST'])
-def send_test_data():
-    # Example mock telemetry
-    mock_data = {
-        "battery_level": 85,
-        "Accel_X": 0.1,
-        "Accel_Y": 0.2,
-        "Accel_Z": 0.3,
-        "Mag_X": 10,
-        "Mag_Y": 5,
-        "Mag_Z": -2,
-        "Gyro_X": 1.0,
-        "Gyro_Y": 0.5,
-        "Gyro_Z": 0.0,
-        "distance": 100,
-        "lat": 32.73095,
-        "lon": -97.11062,
-        "alt": 12.5,
-        "speed": 5.0,
-        "climb": 0.2,
-        "heading": 900
-    }
-    socketio.emit("telemetry_update", mock_data)  # push to all connected clients
-    return "Test data sent!"
-
+        socketio.sleep(5)  # adjust update rate as needed
 
 @socketio.on("connect")
 def handle_connect():
+    print("Browser connected")
+    #with data_lock:
     emit("telemetry_update", blimp_data)  # send current data immediately on connect
 
 if __name__ == '__main__':
+    #socketio.start_background_task(telemetry_updater)
     threading.Thread(target=telemetry_updater, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
