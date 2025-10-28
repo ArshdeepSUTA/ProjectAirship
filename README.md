@@ -16,5 +16,7 @@ The password for the BLIMP itself is in the discord. Pinned.
 
 Username is Asark
 
+Pi's Ip is 192.168.4.1
+
 
 
