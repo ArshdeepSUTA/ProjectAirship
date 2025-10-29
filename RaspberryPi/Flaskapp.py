@@ -159,7 +159,9 @@ blimp_data = {
     "backleft-motor": 0,
     "backright-motor": 0,
     "battery": 100,
-    "current": 0
+    "current": 0,
+    #ultrasonic altitude
+    "ultrasonic-altitude": 0
 }
 
 

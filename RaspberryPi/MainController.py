@@ -4,6 +4,7 @@ import threading
 import uart
 import gps_hat
 import pid
+import Ultrasonic
 
 import math
 
@@ -87,7 +88,7 @@ def PIDController():
     while True:
         pid.set_altitude(pid_controller, Flaskapp.control_commands['Taltitude'])
         # Update PID with current altitude
-        output = pid.update_pid(pid_controller, Flaskapp.blimp_data["alt"])
+        output = pid.update_pid(pid_controller, Flaskapp.blimp_data["ultrasonic-altitude"])
 
         with blimp_data_lock:
             Flaskapp.control_commands['backleft-motor'] = int(output)
@@ -95,6 +96,15 @@ def PIDController():
 
         # short delay
         time.sleep(1)
+
+def UltrasonicReader():
+    try:
+        altitude = Ultrasonic.getDistanceInCm()
+        with blimp_data_lock:
+            Flaskapp.blimp_data["ultrasonic-altitude"] = altitude
+    except Exception as e:
+        print(f"Ultrasonic sensor read error: {e}")
+
 
 # -------------------- auto nav algorithm functions -------------------------
 def haversine(lat1, lon1, lat2, lon2):
@@ -194,6 +204,12 @@ def start_pid_thread():
     pid_thread.start()
     return pid_thread
 
+def start_ultrasonic_thread():
+    print("Starting Ultrasonic reader thread...")
+    ultrasonic_thread = threading.Thread(target=UltrasonicReader, daemon=True)
+    ultrasonic_thread.start()
+    return ultrasonic_thread
+
 
 if __name__ == '__main__':
     print("Starting Blimp controller program")
@@ -212,6 +228,9 @@ if __name__ == '__main__':
     arduino_thread = start_arduino_writer_thread()
     # --- Start PID controller thread ----
     #pid_thread = start_pid_thread()
+
+    # --- Start Ultrasonic reader thread ----
+    ultrasonic_thread = start_ultrasonic_thread()
 
 
     while True:
