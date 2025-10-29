@@ -91,8 +91,12 @@ def PIDController():
         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["ultrasonic-altitude"])
 
         with blimp_data_lock:
-            Flaskapp.control_commands['backleft-motor'] = int(output)
-            Flaskapp.control_commands['backright-motor'] = int(output)
+            if(Flaskapp.blimp_data["stop"] == 0):
+                Flaskapp.control_commands['backleft-motor'] = int(output)
+                Flaskapp.control_commands['backright-motor'] = int(output)
+            else:
+                Flaskapp.control_commands['backleft-motor'] = 0
+                Flaskapp.control_commands['backright-motor'] = 0
 
         # short delay
         time.sleep(1)

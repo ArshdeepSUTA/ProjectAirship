@@ -161,7 +161,8 @@ blimp_data = {
     "battery": 100,
     "current": 0,
     #ultrasonic altitude
-    "ultrasonic-altitude": 0
+    "ultrasonic-altitude": 0,
+    "stop": 0
 }
 
 
@@ -251,6 +252,7 @@ def receive_command():
             blimp_data["startFlag"] = 1
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
+            blimp_data["stop"] = 1
         return "OK", 200
     return "No command received", 400
 
