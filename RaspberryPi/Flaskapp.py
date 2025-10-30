@@ -258,6 +258,9 @@ def receive_command():
             blimp_data["stop"] = 1
         elif cmd == "pid-toggle":
             blimp_data["pid-toggle"] = 1 - blimp_data["pid-toggle"]  # toggle between 0 and 1
+            if blimp_data["pid-toggle"] == 0:
+                control_commands["backleft-motor"] = 0
+                control_commands["backright-motor"] = 0
         return "OK", 200
     return "No command received", 400
 

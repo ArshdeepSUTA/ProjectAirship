@@ -3,7 +3,7 @@ import time
 import threading
 
 SER_PORT = '/dev/ttyACM0'
-BAUD_RATE = 115200
+BAUD_RATE = 500000
 
 arduino = None
 
