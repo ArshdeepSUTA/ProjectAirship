@@ -101,13 +101,13 @@ def PIDController():
         # short delay
         time.sleep(1)
 
-def UltrasonicReader():
-    try:
-        altitude = Ultrasonic.getDistanceInCm()
-        with blimp_data_lock:
-            Flaskapp.blimp_data["ultrasonic-altitude"] = altitude
-    except Exception as e:
-        print(f"Ultrasonic sensor read error: {e}")
+# def UltrasonicReader():
+#     try:
+#         altitude = Ultrasonic.getDistanceInCm()
+#         with blimp_data_lock:
+#             Flaskapp.blimp_data["ultrasonic-altitude"] = altitude
+#     except Exception as e:
+#         print(f"Ultrasonic sensor read error: {e}")
 
 
 # -------------------- auto nav algorithm functions -------------------------
@@ -208,11 +208,11 @@ def start_pid_thread():
     pid_thread.start()
     return pid_thread
 
-def start_ultrasonic_thread():
-    print("Starting Ultrasonic reader thread...")
-    ultrasonic_thread = threading.Thread(target=UltrasonicReader, daemon=True)
-    ultrasonic_thread.start()
-    return ultrasonic_thread
+# def start_ultrasonic_thread():
+#     print("Starting Ultrasonic reader thread...")
+#     ultrasonic_thread = threading.Thread(target=UltrasonicReader, daemon=True)
+#     ultrasonic_thread.start()
+#     return ultrasonic_thread
 
 
 if __name__ == '__main__':
@@ -231,10 +231,10 @@ if __name__ == '__main__':
     uart_thread = start_uart_reader_thread()
     arduino_thread = start_arduino_writer_thread()
     # --- Start PID controller thread ----
-    #pid_thread = start_pid_thread()
+    pid_thread = start_pid_thread()
 
-    # --- Start Ultrasonic reader thread ----
-    ultrasonic_thread = start_ultrasonic_thread()
+    # # --- Start Ultrasonic reader thread ----
+    # ultrasonic_thread = start_ultrasonic_thread()
 
 
     while True:

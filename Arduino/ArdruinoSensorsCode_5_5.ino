@@ -6,6 +6,17 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ICM20X.h>
 #include <Servo.h>
+#include "SR04.h"
+
+//ultrasonic
+#define ECHO 12
+#define TRIG 11
+#define MAX_DISTANCE 900
+#define SAMPLES 5
+SR04 sensor = SR04(ECHO,TRIG);
+long distance[SAMPLES];
+int IND = 0;
+float filteredDist;
 
 // defines
 #define SEALEVELPRESSURE_HPA (1013.25)
@@ -81,6 +92,23 @@ Servo backleft;
 Servo backright; 
 
 int Speed;
+
+//FILTERED DISTANCE 
+float filteredDistance()
+{
+  distance[IND] = sensor.Distance();
+  IND = (IND+1) % SAMPLES;
+
+  float sum = 0;
+  for(int l = 0; l < SAMPLES; l++)
+  {
+      sum += distance[l];
+  }
+
+  float avg = sum / SAMPLES;
+
+  return avg;
+}
 
 
 // filtering function for current sensor / battery percent calculations: simple average filtering (8 samples)
@@ -174,6 +202,13 @@ void setup() {
   //current sensor setup
   lastTime = millis(); //initialize lastTime
 
+  //ultra sonic filter setup
+    //Sensor 1 filter fill
+  for(int i = 0; i < SAMPLES; i++)
+  {
+    distance[i] = sensor.Distance();
+  }
+
   sei();
 
 }
@@ -204,7 +239,7 @@ void loop() {
     Mxyz[2] = -Mxyz[2];
 
     //  get heading in degrees
-    Serial.print("Heading: ");
+    Serial.print("imu-heading: ");
     Serial.println(get_heading(Axyz, Mxyz, p, declination));
 
     // Determine compass (cardinal) direction
@@ -236,12 +271,12 @@ void loop() {
     if (measure.RangeStatus != 4) 
     {
       // millimeters (mm)
-      Serial.print(F("Lidar_Distance:")); Serial.println(measure.RangeMilliMeter);
+      Serial.print(F("distance:")); Serial.println(measure.RangeMilliMeter);
     } 
     else 
     {
       //Serial.println(F("LIDAR_senses_no_obstacle(s)"));
-      Serial.print(F("Lidar_Distance:")); Serial.println(0);
+      Serial.print(F("distance:")); Serial.println(0);
     }
 
     // current and battery calculations ----------------------------------------------------------------------------------
@@ -293,13 +328,19 @@ void loop() {
 
     //current and battery calculations ---------------------------------------------------------------------
     //print results as integers
-    Serial.print("Battery:");
+    Serial.print("battery:");
     Serial.println((int)smoothPercent);
-    Serial.print("Current:");
+    Serial.print("current:");
     Serial.println((int)current);
+
+    //ultra sonic output
+    Serial.print("ultrasonic-altitude:");
+    Serial.print(filteredDist);
+    Serial.println("\n");
     
   }
 
+  filteredDist = filteredDistance();
 
   // Reading for input================================================================================================================
   if(Serial.available() > 0)
@@ -309,8 +350,7 @@ void loop() {
     String message = Serial.readStringUntil('\n');
     message.trim();
     // Serial.print("got message");
-    Serial.print(message);
-    Serial.print('\n');
+    Serial.println(message);
 
     int colonDex = message.indexOf(':');
 
@@ -326,15 +366,15 @@ void loop() {
 
 
       //printing command
-      Serial.print("command = ");
-      Serial.println(Command);
+      // Serial.print("command = ");
+      // Serial.println(Command);
 
-      //printing value
-      Serial.print("value = ");
-      Serial.println(value);
+      // //printing value
+      // Serial.print("value = ");
+      // Serial.println(value);
 
       //controlling speed
-      if(Command.equals("left"))
+      if(Command.equals("left-motor"))
       {
         Speed = value.toInt();
         int pulse = map(Speed, 0, 100, 1065, 2000);
@@ -342,7 +382,7 @@ void loop() {
 
       }
 
-      if(Command.equals("right"))
+      if(Command.equals("right-motor"))
       {
         Speed = value.toInt();
         int pulse = map(Speed, 0, 100, 1055, 2000);
@@ -350,7 +390,7 @@ void loop() {
 
       }
 
-      if(Command.equals("backleft"))
+      if(Command.equals("backleft-motor"))
       {
         Speed = value.toInt();
         int pulse = map(Speed, 0, 100, 1060, 2000);
@@ -358,10 +398,10 @@ void loop() {
 
       }
 
-      if(Command.equals("backright"))
+      if(Command.equals("backright-motor"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1182, 1500);
+        int pulse = map(Speed, 0, 100, 1180, 1500);
         backright.writeMicroseconds(pulse);
 
       }
