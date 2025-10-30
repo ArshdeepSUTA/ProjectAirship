@@ -162,7 +162,8 @@ blimp_data = {
     "current": 0,
     #ultrasonic altitude
     "ultrasonic-altitude": 0,
-    "stop": 0
+    "stop": 0,
+    "pid-toggle": 0
 }
 
 
@@ -211,9 +212,11 @@ def receive_control_commands():
         received_json = request.get_json()
 
         #update variables in controls object - added key error protection
-        control_commands["left-motor"] = received_json.get("left", control_commands["left"])
-        control_commands["right-motor"] = received_json.get("right", control_commands["right"])
-        control_commands["stop"] = received_json.get("stop", control_commands["stop"])
+        control_commands["left-motor"] = received_json.get("frontleft", control_commands["left-motor"])
+        control_commands["right-motor"] = received_json.get("frontright", control_commands["right-motor"])
+        if blimp_data["pid-toggle"] == 0:
+            control_commands["backleft-motor"] = received_json.get("back", control_commands["backleft-motor"])
+            control_commands["backright-motor"] = received_json.get("back", control_commands["backright-motor"])
         control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
@@ -253,6 +256,8 @@ def receive_command():
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
             blimp_data["stop"] = 1
+        elif cmd == "pid-toggle":
+            blimp_data["pid-toggle"] = 1 - blimp_data["pid-toggle"]  # toggle between 0 and 1
         return "OK", 200
     return "No command received", 400
 
