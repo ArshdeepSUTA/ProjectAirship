@@ -38,18 +38,32 @@
             <div class="spacer"></div>
             <button id="down">Down</button>
         </div>
+
+        <label class="switch">
+            <input type="checkbox" id="pidSwitch">
+            <span class="slider"></span> PID Control
+        </label>
     </div>
 
     <div id="motor-strength">
         <h3>Manual Controls</h3>
         <label>Left Motor Strength:
-            <input type="number" id="left-manual" min="0" max="180">
+            <input type="number" id="frontleft-manual" min="0" max="100">
+            <span id="frontleft-value">0</span>
         </label><br>
         <label>Right Motor Strength:
-            <input type="number" id="right-manual" min="0" max="180">
+            <input type="number" id="frontright-manual" min="0" max="100">
+            <span id="frontright-value">0</span>
         </label><br>
+
+        <label>Back Motor Strength:
+            <input type="range" id="back-manual" min="0" max="100" value ="0">
+            <span id="back-value">0</span>
+        </label><br>
+
         <label>Target Altitude:
-            <input type="number" id="Taltitude" step="0.1">
+            <input type="number" id="Taltitude-manual" step="0.1">
+            <span id="Taltitude-value">0</span>
         </label><br>
         <button onclick="sendManualCommand()">Send Command</button>
     </div>
@@ -66,7 +80,8 @@
         <p>Climb: <span id="climb"></span> m/s</p>
         <p>Back Left: <span id="backleft-motor"></span>% | Back Right: <span id="backright-motor"></span>%</p>
         <p>Left: <span id="left-motor"></span>% | Right: <span id="right-motor"></span>%</p>
-        <p>Start Flag: <span id="startFlag"></span> </p>
+        <p>Start Flag: <span id="startFlag"></span> | Stop Flag: <span id="stop"></span></p>
+        <p>Ultrasonic Altitude: <span id="ultrasonic-altitude"></span> cm</p>
     </div>
 
     <div class="video">

@@ -80,14 +80,36 @@ document.addEventListener('keyup', function (event) {
     if (box) box.classList.remove('active');
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+    const pidSwitch = document.getElementById('pidSwitch');
+    if (!pidSwitch) return;
+
+    // Only this listener triggers
+    pidSwitch.addEventListener('change', () => {
+        sendCommand('pid-toggle');  // Always sends "pid-toggle", never 0 or 1
+        console.log("PID toggle command sent!");
+    });
+});
+
+const motorIds = ['frontleft', 'frontright', 'back', 'Taltitude'];
+motorIds.forEach(id => {
+    const slider = document.getElementById(id + '-manual');
+    const display = document.getElementById(id + '-value');
+    slider.addEventListener('input', () => {
+        display.textContent = slider.value;
+    });
+});
+
 function sendManualCommand() {
-    const left = document.getElementById('left-manual').value;
-    const right = document.getElementById('right-manual').value;
-    const altitude = document.getElementById('Taltitude').value;
+    const frontleft = document.getElementById('frontleft-manual').value;
+    const frontright = document.getElementById('frontright-manual').value;
+    const back = document.getElementById('back-manual').value;
+    const altitude = document.getElementById('Taltitude-manual').value;
 
     const formData = new URLSearchParams();
-    formData.append('left', left);
-    formData.append('right', right);
+    formData.append('frontleft', frontleft);
+    formData.append('frontright', frontright);
+    formData.append('back', back);
     formData.append('Taltitude', altitude);
 
     fetch('/manual', {
