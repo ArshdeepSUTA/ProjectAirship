@@ -22,7 +22,6 @@ float filteredDist;
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // Analog Current Sensor Calibration ------------------------------------------------------------------------
-#define currentPin A1 // current sensor out1
 #define voltagePin A0 //voltage divider pin
 
 // voltage divider constants
@@ -32,24 +31,10 @@ float filteredDist;
 
 #define VCC 5.0
 #define ADC_RES 1023.0  
-#define SENSITIVITY 0.040     // from the datasheet
-#define ZERO_CURRENT_V 2.512  // calibrated value from 0 load
-
-//battery attributes
-#define CELLS 2
-#define CELL_FULL 4.20
-#define CELL_EMPTY 3.20
+//battery variables
 #define BATTERY_CAPACITY_mAh 5200.0
+float batteryPercent = 0.0;
 
-// filtering values
-#define NUM_SAMPLES 8        // average samples
-//#define IDLE_CURRENT_THRESHOLD 0.05 
-#define PERCENT_SMOOTH_ALPHA 0.2    
-
-// global Varaibles for current sensor
-unsigned long lastTime = 0;
-float mAhUsed = 0.0;
-float smoothPercent = -1.0; //filtering varaible
 //end current sensor stuff----------------------------------------------------------------------------------
 
 #define WIRE_PORT Wire // desired Wire port.
@@ -110,21 +95,12 @@ float filteredDistance()
   return avg;
 }
 
-
-// filtering function for current sensor / battery percent calculations: simple average filtering (8 samples)
-float readAveragePin(int pin) {
-
-  long sum = 0;
-
-  for (int i = 0; i < NUM_SAMPLES; ++i) {
-
-    sum += analogRead(pin);
-    
-    delay(2);
-  }
-
-  return (float)sum / NUM_SAMPLES;
-
+float readBatVoltage()
+{
+  float rawV = analogRead(voltagePin);
+  float vMeasured = (rawV * VCC) / ADC_RES;
+  float batteryVoltage = vMeasured * DIVIDER_RATIO;
+  return batteryVoltage;
 }
 
 
@@ -199,8 +175,6 @@ void setup() {
   // enable timer 3 interrupt
   TIMSK3 |= (1 << OCIE3A);
 
-  //current sensor setup
-  lastTime = millis(); //initialize lastTime
 
   //ultra sonic filter setup
     //Sensor 1 filter fill
@@ -283,55 +257,14 @@ void loop() {
     //print current sensor data
     // Get ADC reading for a0
     //get battery voltage
-    float rawV = readAveragePin(voltagePin);
-    float vMeasured = (rawV * VCC) / ADC_RES;
-    float batteryVoltage = vMeasured * DIVIDER_RATIO;
-
-    //get battery current (from current sensor)
-    float rawI = readAveragePin(currentPin);
-    float vCurrent = (rawI * VCC) / ADC_RES;
-    float current = (vCurrent - ZERO_CURRENT_V) / SENSITIVITY; 
-
-    //remove small current values (noise)
-    if(fabs(current) < 0.05)
-    {
-      current = 0.0;
-    }
-
-    //coulomb counting
-    unsigned long now = millis(); // get current time for delta time
-    float dt = (now - lastTime) / 1000.0f; // calculate delta time in ms
-    lastTime = now;
-    
-    //count mAh used if time has passed.
-    if (current > 0.0 && dt > 0.0) {
-      mAhUsed += (current * dt) / 3.6f; // (A * s) -> mAh
-    }
-
-    //get battery value as a function of battery voltage (ADC value)
-    float perCellV = batteryVoltage / CELLS;
-    float percent = (perCellV - CELL_EMPTY) / (CELL_FULL - CELL_EMPTY) * 100.0;
-
-    //clamp the output
-    if(percent > 100.0) 
-      percent = 100.0;
-    if(percent < 0.0)
-      percent = 0.0;
 
 
-    if(smoothPercent < 0)
-      smoothPercent = percent;
-
-    //apply smoothing filter
-    smoothPercent = PERCENT_SMOOTH_ALPHA * percent + (1 - PERCENT_SMOOTH_ALPHA) * smoothPercent;
 
 
     //current and battery calculations ---------------------------------------------------------------------
     //print results as integers
     Serial.print("battery:");
-    Serial.println((int)smoothPercent);
-    Serial.print("current:");
-    Serial.println((int)current);
+    Serial.println((int)batteryPercent);
 
     //ultra sonic output
     Serial.print("ultrasonic-altitude:");
@@ -341,6 +274,23 @@ void loop() {
   }
 
   filteredDist = filteredDistance();
+
+  float rawV = readBatVoltage(voltagePin);
+
+
+    
+  if(rawV >= 8.4)
+  {
+    batteryPercent = 100.0;
+  }
+  else if(rawV <= 6.4)
+  {
+    batteryPercent = 0.0;
+  }
+  else
+  {
+    batteryPercent = ((rawV - 6.4) / (8.4 - 6.4)) * 100.0;
+  }
 
   // Reading for input================================================================================================================
   if(Serial.available() > 0)
@@ -390,20 +340,15 @@ void loop() {
 
       }
 
-      if(Command.equals("backleft-motor"))
+      if(Command.equals("back-motors"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1060, 2000);
-        backleft.writeMicroseconds(pulse);
 
-      }
-
-      if(Command.equals("backright-motor"))
-      {
-        Speed = value.toInt();
         int pulse = map(Speed, 0, 100, 1180, 1500);
         backright.writeMicroseconds(pulse);
-
+        pulse = map(Speed, 0, 100, 1060, 2000);
+        backleft.writeMicroseconds(pulse);
+        
       }
 
       if(Command.equals("stop")) //stop:1 stops all motors

@@ -93,11 +93,9 @@ def PIDController():
         if(Flaskapp.blimp_data["pid-toggle"] == 1):
             with blimp_data_lock:
                 if(Flaskapp.blimp_data["stop"] == 0):
-                    Flaskapp.control_commands['backleft-motor'] = int(output)
-                    Flaskapp.control_commands['backright-motor'] = int(output)
+                    Flaskapp.control_commands['back-motors'] = int(output)
                 else:
-                    Flaskapp.control_commands['backleft-motor'] = 0
-                    Flaskapp.control_commands['backright-motor'] = 0
+                    Flaskapp.control_commands['back-motors'] = 0
 
         # short delay
         time.sleep(1)
