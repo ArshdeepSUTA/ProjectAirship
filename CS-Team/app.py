@@ -61,7 +61,11 @@ blimp_data = {
     "left-motor": 0,
     "right-motor": 0,
     "battery": 100,
-    "current": 0
+    "current": 0,
+    
+    #ultrasonic altitude
+    "ultrasonic-altitude": 0,
+    "stop": 0
 }
 
 @app.route('/')
@@ -87,16 +91,17 @@ def command():
 def manual():
     try:
         # Get form data sent from HTML
-        left = int(request.form.get("left", 0))
-        right = int(request.form.get("right", 0))
-        altitude = float(request.form.get("target_altitude", 0.0))
+        frontleft = int(request.form.get("frontleft", 0))
+        frontright = int(request.form.get("frontright", 0))
+        back = int(request.form.get("back", 0))
+        altitude = float(request.form.get("Taltitude", 0.0))
 
-        payload = {"left": left, "right": right, "target_altitude": altitude}
+        payload = {"frontleft": frontleft, "frontright": frontright, "back": back, "Taltitude": altitude}
 
         app.logger.info(f"Sending manual control data: {payload}")
 
         # Send JSON to Pi
-        res = requests.post(f"{PI_IP}/command", json=payload, timeout=1)
+        res = requests.post(f"{PI_IP}/control", json=payload, timeout=1)
         app.logger.info(f"Response from Pi: {res.status_code}")
 
         return '', 204
