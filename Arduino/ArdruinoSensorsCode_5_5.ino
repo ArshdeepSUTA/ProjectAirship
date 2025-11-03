@@ -95,7 +95,7 @@ float filteredDistance()
   return avg;
 }
 
-float readBatVoltage()
+float readBatVoltage(int voltagePin)
 {
   float rawV = analogRead(voltagePin);
   float vMeasured = (rawV * VCC) / ADC_RES;
@@ -327,7 +327,7 @@ void loop() {
       if(Command.equals("left-motor"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1065, 2000);
+        int pulse = map(Speed, 0, 100, 1060, 2000);
         left.writeMicroseconds(pulse);
 
       }
@@ -335,7 +335,7 @@ void loop() {
       if(Command.equals("right-motor"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1055, 2000);
+        int pulse = map(Speed, 0, 100, 1050, 2000);
         right.writeMicroseconds(pulse);
 
       }
@@ -346,7 +346,7 @@ void loop() {
 
         int pulse = map(Speed, 0, 100, 1180, 1500);
         backright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1060, 2000);
+        pulse = map(Speed, 0, 100, 1059, 2000);
         backleft.writeMicroseconds(pulse);
         
       }
