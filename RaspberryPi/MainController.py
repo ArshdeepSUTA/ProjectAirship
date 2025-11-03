@@ -96,6 +96,8 @@ def PIDController():
                     Flaskapp.control_commands['back-motors'] = int(output)
                 else:
                     Flaskapp.control_commands['back-motors'] = 0
+        elif (Flaskapp.blimp_data["stop"] == 1):
+            Flaskapp.control_commands['back-motors'] = 0
 
         # short delay
         time.sleep(1)
