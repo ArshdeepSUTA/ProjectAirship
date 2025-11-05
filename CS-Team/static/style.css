@@ -48,6 +48,8 @@ button {
 
 button.active {
     background-color: #90ee90;
+    box-shadow: 0 0 10px #90ee90;
+    transform: translateY(4px);
 }
 
 .spacer {

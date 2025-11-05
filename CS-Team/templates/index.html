@@ -16,8 +16,8 @@
 
     <div class="start-stop-controls">
         <h3>Start/Stop Blimp</h3>
-        <button onclick="sendStartCommand()">Start</button>
-        <button onclick="sendStopCommand()">Stop</button>
+        <button id="start">Start</button>
+        <button id="stop-btn">Stop</button>
     </div>
 
     <div class="control-layout">
@@ -65,7 +65,7 @@
             <input type="number" id="Taltitude-manual" step="0.1">
             <span id="Taltitude-value">0</span>
         </label><br>
-        <button onclick="sendManualCommand()">Send Command</button>
+        <button id="send-manual">Send Command</button>
     </div>
 
     <div class="blimp_data">
@@ -78,7 +78,7 @@
         <p>GPS: lat <span id="lat"></span>, lon <span id="lon"></span>, alt <span id="alt"></span> m</p>
         <p>Speed: <span id="speed"></span> m/s</p>
         <p>Climb: <span id="climb"></span> m/s</p>
-        <p>Back Left: <span id="backleft-motor"></span>% | Back Right: <span id="backright-motor"></span>%</p>
+        <p>Back Motors: <span id="back-motors"></span>%</p>
         <p>Left: <span id="left-motor"></span>% | Right: <span id="right-motor"></span>%</p>
         <p>Start Flag: <span id="startFlag"></span> | Stop Flag: <span id="stop"></span></p>
         <p>Ultrasonic Altitude: <span id="ultrasonic-altitude"></span> cm</p>

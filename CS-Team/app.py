@@ -56,8 +56,7 @@ blimp_data = {
 
     #return data from arduino
     
-    "backleft-motor": 0,
-    "backright-motor": 0,
+    "back-motors": 0,
     "left-motor": 0,
     "right-motor": 0,
     "battery": 100,
