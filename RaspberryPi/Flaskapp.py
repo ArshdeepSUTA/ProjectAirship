@@ -31,7 +31,7 @@ camera.start()
 KNOWN_WIDTH_CM = 30.0 
 
 # Approximate focal length in pixels ( describes how zoomed in the camera is )
-FOCAL_LENGTH_PX = 615.0  # known estimate based on pi camera 
+FOCAL_LENGTH_PX = 530.0  # known estimate based on pi camera 
 
 # --- Generate Frames ---
 def generate_frames():
