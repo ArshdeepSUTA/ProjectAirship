@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, Response
 import time
 import threading
 import cv2
+import uart
 
 #import camera libraries
 from picamera2 import Picamera2
@@ -156,6 +157,7 @@ blimp_data = {
     #return data from arduino
     "left-motor": 0,
     "right-motor": 0,
+    "front-motors": 0,
     "back-motors": 0,
     "battery": 100,
     "current": 0,
@@ -174,6 +176,7 @@ control_commands = {
     "left-motor": 0,  
     "right-motor": 0,
     "back-motors": 0,
+    "front-motors": 0,
     "stop": 0,   
     "Taltitude": 20.0
 }
@@ -214,6 +217,7 @@ def receive_control_commands():
         control_commands["right-motor"] = received_json.get("frontright", control_commands["right-motor"])
         if blimp_data["pid-toggle"] == 0:
             control_commands["back-motors"] = received_json.get("back", control_commands["back-motors"])
+            control_commands["front-motors"] = received_json.get("front", control_commands["front-motors"])
         control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
@@ -253,10 +257,14 @@ def receive_command():
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
             blimp_data["stop"] = 1
+            with uart.uart_lock:
+                uart.writeArduinoCommmand("stop", "1")
         elif cmd == "pid-toggle":
             blimp_data["pid-toggle"] = 1 - blimp_data["pid-toggle"]  # toggle between 0 and 1
             if blimp_data["pid-toggle"] == 0:
                 control_commands["back-motors"] = 0
+                control_commands["front-motors"] = 0
+
         return "OK", 200
     return "No command received", 400
 

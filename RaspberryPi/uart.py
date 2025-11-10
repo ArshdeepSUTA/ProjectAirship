@@ -6,6 +6,7 @@ SER_PORT = '/dev/ttyACM0'
 BAUD_RATE = 115200
 
 arduino = None
+uart_lock = threading.Lock()
 
 #serial connect
 def initUart():
@@ -39,6 +40,3 @@ def writeArduinoCommmand(command: str, value: str):
         print(f"[pi send to arduino] {message.strip()}")
     except Exception as e:
             print(f"failed to write data due to {e}")
-
-
-

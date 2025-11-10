@@ -74,7 +74,9 @@ volatile bool timerFlag = false;
 Servo left;
 Servo right;  
 Servo backleft; 
-Servo backright; 
+Servo backright;
+Servo frontleft;
+Servo frontright; 
 
 int Speed;
 
@@ -115,10 +117,13 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // attach pin to ESC
-  left.attach(2,1000,2000);
-  right.attach(4,1000,2000);
+  left.attach(1,1000,2000);
+  right.attach(3,1000,2000);
   backleft.attach(6,1000,2000);
   backright.attach(8,1000,2000);
+  frontright.attach(2,1000,2000);
+  frontleft.attach(4,1000,2000);
+
 
   // turn off motors at the start
   left.write(0);
@@ -340,6 +345,17 @@ void loop() {
 
       }
 
+      if(Command.equals("front-motors"))
+      {
+        Speed = value.toInt();
+
+        int pulse = map(Speed, 0, 100, 1180, 1500);
+        frontright.writeMicroseconds(pulse);
+        pulse = map(Speed, 0, 100, 1059, 2000);
+        frontleft.writeMicroseconds(pulse);
+        
+      }
+
       if(Command.equals("back-motors"))
       {
         Speed = value.toInt();
@@ -360,6 +376,8 @@ void loop() {
           left.write(0);
           backright.write(0);
           backleft.write(0);
+          frontright.write(0);
+          frontleft.write(0);
         }
       }
 

@@ -74,9 +74,11 @@ def GPSReader():
 def arduinoWriter():
     while True:
         # Only send if commands have changed
+        commands_to_send = {}
         with blimp_data_lock:
-            commands = Flaskapp.control_commands.copy()
-            for key, value in commands.items():
+            commands_to_send = Flaskapp.control_commands.copy()
+        with uart.uart_lock:
+            for key, value in commands_to_send.items():
                 uart.writeArduinoCommmand(key, f"{value}")
         time.sleep(1)  # Adjust as needed
 
@@ -94,8 +96,10 @@ def PIDController():
             with blimp_data_lock:
                 if(Flaskapp.blimp_data["stop"] == 0):
                     Flaskapp.control_commands['back-motors'] = int(output)
+                    Flaskapp.control_commands['front-motors'] = int(output)
                 else:
                     Flaskapp.control_commands['back-motors'] = 0
+                    Flaskapp.control_commands['front-motors'] = 0
         elif (Flaskapp.blimp_data["stop"] == 1):
             Flaskapp.control_commands['back-motors'] = 0
 
