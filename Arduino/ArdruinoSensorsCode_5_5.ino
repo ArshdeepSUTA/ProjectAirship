@@ -307,7 +307,7 @@ void loop() {
     String message = Serial.readStringUntil('\n');
     message.trim();
     // Serial.print("got message");
-    Serial.println(message);
+    // Serial.println(message);
 
     int colonDex = message.indexOf(':');
 
@@ -351,9 +351,9 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1180, 1500);
+        int pulse = map(Speed, 0, 100, 1066, 1990);
         frontright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1059, 2000);
+        pulse = map(Speed, 0, 100, 1055, 1950);
         frontleft.writeMicroseconds(pulse);
         
       }
@@ -362,9 +362,9 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1180, 1500);
+        int pulse = map(Speed, 0, 100, 1075, 1985);
         backright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1059, 2000);
+        pulse = map(Speed, 0, 100, 1061, 1955);
         backleft.writeMicroseconds(pulse);
         
       }

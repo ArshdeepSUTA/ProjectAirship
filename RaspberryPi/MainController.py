@@ -105,7 +105,7 @@ def PIDController():
             Flaskapp.control_commands['back-motors'] = 0
 
         # short delay
-        time.sleep(1)
+        time.sleep(0.1)
 
 # def UltrasonicReader():
 #     try:
