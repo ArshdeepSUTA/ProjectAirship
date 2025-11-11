@@ -4,7 +4,7 @@ import threading
 import uart
 import gps_hat
 import pid
-import Ultrasonic
+from multiprocessing import Process
 
 import math
 
@@ -27,7 +27,8 @@ def runFlaskApp():
 
 def uartReader():
     while True:
-        line = uart.readArduinoData()
+        with uart.uart_lock:
+            line = uart.readArduinoData()
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
@@ -80,7 +81,7 @@ def arduinoWriter():
         with uart.uart_lock:
             for key, value in commands_to_send.items():
                 uart.writeArduinoCommmand(key, f"{value}")
-        time.sleep(1)  # Adjust as needed
+        time.sleep(0.90)  # Adjust as needed
 
 # ---- PID controller thread ----
 def PIDController():
@@ -233,8 +234,9 @@ if __name__ == '__main__':
     # --- Start GPS ----
     #gps_thread = start_gps_thread()
     # --- Start UART read and write threads ----
-    uart_thread = start_uart_reader_thread()
     arduino_thread = start_arduino_writer_thread()
+    uart_thread = start_uart_reader_thread()
+
     # --- Start PID controller thread ----
     pid_thread = start_pid_thread()
 

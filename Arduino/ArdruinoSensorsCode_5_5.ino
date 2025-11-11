@@ -130,6 +130,8 @@ void setup() {
   right.write(0);
   backleft.write(0);
   backright.write(0);
+  frontleft.write(0);
+  frontright.write(0);
 
   //frontleft motor setup
   //frontleft.attach(7,1000,2000);

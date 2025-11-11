@@ -157,8 +157,8 @@ blimp_data = {
     #return data from arduino
     "left-motor": 0,
     "right-motor": 0,
-    "front-motors": 0,
     "back-motors": 0,
+    "front-motors": 0,
     "battery": 100,
     "current": 0,
     #ultrasonic altitude
@@ -173,10 +173,10 @@ blimp_data = {
 #add controls
 control_commands = {
     "temp": 1234,
+    "front-motors": 0,
     "left-motor": 0,  
     "right-motor": 0,
     "back-motors": 0,
-    "front-motors": 0,
     "stop": 0,   
     "Taltitude": 20.0
 }
@@ -217,7 +217,7 @@ def receive_control_commands():
         control_commands["right-motor"] = received_json.get("frontright", control_commands["right-motor"])
         if blimp_data["pid-toggle"] == 0:
             control_commands["back-motors"] = received_json.get("back", control_commands["back-motors"])
-            control_commands["front-motors"] = received_json.get("front", control_commands["front-motors"])
+            control_commands["front-motors"] = received_json.get("back", control_commands["front-motors"])
         control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
