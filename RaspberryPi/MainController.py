@@ -25,14 +25,6 @@ def runFlaskApp():
     print("Running Flask app...")
     Flaskapp.app.run(host='192.168.4.1', port=5000, debug=False)
 
-def uartReader():
-    while True:
-        with uart.uart_lock:
-            line = uart.readArduinoData()
-        handleData(line)
-        if line:
-            print(f"from arduino {line}") #handle data read
-            time.sleep(0.001) #add or remove delay on reading data
 
 # ---- Handle command data sent by the UART and update blimp_status dictionary --- 
 def handleData(line):
@@ -71,17 +63,53 @@ def GPSReader():
         except Exception as e:
             print(f"GPS thread could not read due to {e}")
 
-# ---- Arduino writer thread ----
-def arduinoWriter():
+# # ---- Arduino writer thread ----
+# def arduinoWriter():
+#     while True:
+#         # Only send if commands have changed
+#         commands_to_send = {}
+#         with blimp_data_lock:
+#             commands_to_send = Flaskapp.control_commands.copy()
+#         with uart.uart_lock:
+#             for key, value in commands_to_send.items():
+#                 uart.writeArduinoCommmand(key, f"{value}")
+#         time.sleep(0.90)  # Adjust as needed
+
+
+# # ---- UART reader thread ----
+# def uartReader():
+#     while True:
+#         with uart.uart_lock:
+#             line = uart.readArduinoData()
+#         handleData(line)
+#         if line:
+#             print(f"from arduino {line}") #handle data read
+#             time.sleep(0.001) #add or remove delay on reading data
+
+# ---- UART communication thread ---- Main Comms Thread
+def UARTCommunicator():
+    last_write_time = 0
+    write_interval = 0.75 # seconds
+
     while True:
-        # Only send if commands have changed
-        commands_to_send = {}
-        with blimp_data_lock:
-            commands_to_send = Flaskapp.control_commands.copy()
+        current_time = time.time()
+        # Read data from Arduino
         with uart.uart_lock:
-            for key, value in commands_to_send.items():
-                uart.writeArduinoCommmand(key, f"{value}")
-        time.sleep(0.90)  # Adjust as needed
+            line = uart.readArduinoData()
+        handleData(line)
+        if line:
+            print(f"from arduino {line}") #handle data read
+
+        # Write data to Arduino at defined intervals
+        if current_time - last_write_time >= write_interval:
+            with blimp_data_lock:
+                commands_to_send = Flaskapp.control_commands.copy()
+            with uart.uart_lock:
+                for key, value in commands_to_send.items():
+                    uart.writeArduinoCommmand(key, f"{value}")
+            last_write_time = current_time
+
+        time.sleep(0.001)  # small delay to prevent CPU overload
 
 # ---- PID controller thread ----
 def PIDController():
@@ -103,6 +131,7 @@ def PIDController():
                     Flaskapp.control_commands['front-motors'] = 0
         elif (Flaskapp.blimp_data["stop"] == 1):
             Flaskapp.control_commands['back-motors'] = 0
+            Flaskapp.control_commands['front-motors'] = 0
 
         # short delay
         time.sleep(0.1)
@@ -195,18 +224,25 @@ def start_flask_thread():
     flask_thread.start()
     return flask_thread
 
-def start_uart_reader_thread():
-    print("Starting UART app as a thread...")
-    uart.initUart()
-    reader_thread = threading.Thread(target=uartReader, daemon=True)
-    reader_thread.start()
-    return reader_thread
+# def start_uart_reader_thread():
+#     print("Starting UART app as a thread...")
+#     uart.initUart()
+#     reader_thread = threading.Thread(target=uartReader, daemon=True)
+#     reader_thread.start()
+#     return reader_thread
 
-def start_arduino_writer_thread():
-    print("Starting Arduino writer thread...")
-    arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
-    arduino_thread.start()
-    return arduino_thread
+# def start_arduino_writer_thread():
+#     print("Starting Arduino writer thread...")
+#     arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
+#     arduino_thread.start()
+#     return arduino_thread
+
+def uart_communicator_thread():
+    print("Starting UART communicator thread...")
+    uart.initUart()
+    uart_thread = threading.Thread(target=UARTCommunicator, daemon=True)
+    uart_thread.start()
+    return uart_thread
 
 def start_pid_thread():
     print("Starting PID controller thread...")
@@ -233,9 +269,11 @@ if __name__ == '__main__':
 
     # --- Start GPS ----
     #gps_thread = start_gps_thread()
+    
     # --- Start UART read and write threads ----
-    arduino_thread = start_arduino_writer_thread()
-    uart_thread = start_uart_reader_thread()
+    # arduino_thread = start_arduino_writer_thread()
+    # uart_thread = start_uart_reader_thread()
+    uart_thread = uart_communicator_thread()
 
     # --- Start PID controller thread ----
     pid_thread = start_pid_thread()
