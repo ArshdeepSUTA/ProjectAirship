@@ -254,6 +254,7 @@ def receive_command():
             control_commands["right-motor"] = 0
         elif cmd == "start-blimp":
             blimp_data["startFlag"] = 1
+            blimp_data["stop"] = 0
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
             blimp_data["stop"] = 1
@@ -261,9 +262,9 @@ def receive_command():
                 uart.writeArduinoCommmand("stop", "1")
         elif cmd == "pid-toggle":
             blimp_data["pid-toggle"] = 1 - blimp_data["pid-toggle"]  # toggle between 0 and 1
-            if blimp_data["pid-toggle"] == 0:
-                control_commands["back-motors"] = 0
-                control_commands["front-motors"] = 0
+            # if blimp_data["pid-toggle"] == 0:
+            #     control_commands["back-motors"] = 0
+            #     control_commands["front-motors"] = 0
 
         return "OK", 200
     return "No command received", 400

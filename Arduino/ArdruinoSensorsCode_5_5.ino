@@ -121,8 +121,8 @@ void setup() {
   right.attach(3,1000,2000);
   backleft.attach(6,1000,2000);
   backright.attach(8,1000,2000);
-  frontright.attach(2,1000,2000);
-  frontleft.attach(4,1000,2000);
+  frontright.attach(4,1000,2000);
+  frontleft.attach(2,1000,2000);
 
 
   // turn off motors at the start
@@ -270,13 +270,13 @@ void loop() {
 
     //current and battery calculations ---------------------------------------------------------------------
     //print results as integers
-    Serial.print("battery:");
-    Serial.println((int)batteryPercent);
+    // Serial.print("battery:");
+    // Serial.println((int)batteryPercent);
 
     //ultra sonic output
     Serial.print("ultrasonic-altitude:");
-    Serial.print(filteredDist);
-    Serial.println("\n");
+    Serial.println(filteredDist);
+
     
   }
 
@@ -351,10 +351,11 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1066, 1990);
-        frontright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1055, 1950);
+        int pulse = map(Speed, 0, 100, 1070, 1980);
         frontleft.writeMicroseconds(pulse);
+        pulse = map(Speed, 0, 100, 1060, 1980);
+        frontright.writeMicroseconds(pulse);
+
         
       }
 

@@ -89,7 +89,7 @@ def GPSReader():
 # ---- UART communication thread ---- Main Comms Thread
 def UARTCommunicator():
     last_write_time = 0
-    write_interval = 0.75 # seconds
+    write_interval = 0.90 # seconds
 
     while True:
         current_time = time.time()
@@ -108,6 +108,7 @@ def UARTCommunicator():
                 for key, value in commands_to_send.items():
                     uart.writeArduinoCommmand(key, f"{value}")
             last_write_time = current_time
+            uart.arduino.flush()
 
         time.sleep(0.001)  # small delay to prevent CPU overload
 
