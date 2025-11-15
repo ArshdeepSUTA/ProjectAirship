@@ -2,7 +2,7 @@ import serial
 import time
 import threading
 
-SER_PORT = '/dev/ttyACM0'
+SER_PORT = '/dev/serial0'
 BAUD_RATE = 115200
 
 arduino = None
@@ -13,7 +13,7 @@ def initUart():
     global arduino
 
     try:
-        arduino = serial.Serial(SER_PORT, BAUD_RATE, timeout=0)
+        arduino = serial.Serial(SER_PORT, BAUD_RATE, timeout=0, write_timeout=0, rtscts=False,dsrdtr=False)
         print(f"UART Connected")
     except serial.SerialException as e:
         print(f"Cound't connect to UART due to {e}")

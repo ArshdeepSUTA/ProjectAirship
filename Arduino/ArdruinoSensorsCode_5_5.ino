@@ -110,8 +110,8 @@ float readBatVoltage(int voltagePin)
 void setup() {
 
   // Initialize serial communication at 115200 baud rate ---------------------------
-  Serial.begin(115200);
-  while (!Serial) delay(10); // Wait for serial console
+  Serial3.begin(115200);
+  while (!Serial3) delay(10); // Wait for Serial3 console
 
   // ----------- Configure motor control -----------------------------------------
   pinMode(LED_BUILTIN, OUTPUT);
@@ -141,20 +141,20 @@ void setup() {
 
   // Connect to sensors via i2c
   if (!lox.begin()) {
-    Serial.println(F("LIDAR Error"));
+    Serial3.println(F("LIDAR Error"));
     while (1);
   }
 
-  //while (!Serial); //wait for connection
+  //while (!Serial3); //wait for connection
   WIRE_PORT.begin();
   WIRE_PORT.setClock(400000);
   imu.begin(WIRE_PORT, AD0_VAL);
   if (imu.status != ICM_20948_Stat_Ok) {
-    Serial.println(F("ICM_20948 not detected"));
+    Serial3.println(F("ICM_20948 not detected"));
     while (1);
   }
   //if (!icm.begin_I2C()) {
-    //Serial.println(F("IMU Error"));
+    //Serial3.println(F("IMU Error"));
     //while (1);
   //}
 
@@ -203,7 +203,7 @@ ISR(TIMER3_COMPA_vect)
 void loop() {
 
   //check for incoming data
-  //Serial.println("waiting for message...");
+  //Serial3.println("waiting for message...");
 
   if (timerFlag)
   {
@@ -220,8 +220,8 @@ void loop() {
     Mxyz[2] = -Mxyz[2];
 
     //  get heading in degrees
-    Serial.print("imu-heading: ");
-    Serial.println(get_heading(Axyz, Mxyz, p, declination));
+    Serial3.print("imu-heading: ");
+    Serial3.println(get_heading(Axyz, Mxyz, p, declination));
 
     // Determine compass (cardinal) direction
     /*
@@ -252,12 +252,12 @@ void loop() {
     if (measure.RangeStatus != 4) 
     {
       // millimeters (mm)
-      Serial.print(F("distance:")); Serial.println(measure.RangeMilliMeter);
+      Serial3.print(F("distance:")); Serial3.println(measure.RangeMilliMeter);
     } 
     else 
     {
-      //Serial.println(F("LIDAR_senses_no_obstacle(s)"));
-      Serial.print(F("distance:")); Serial.println(0);
+      //Serial3.println(F("LIDAR_senses_no_obstacle(s)"));
+      Serial3.print(F("distance:")); Serial3.println(0);
     }
 
     // current and battery calculations ----------------------------------------------------------------------------------
@@ -270,12 +270,12 @@ void loop() {
 
     //current and battery calculations ---------------------------------------------------------------------
     //print results as integers
-    // Serial.print("battery:");
-    // Serial.println((int)batteryPercent);
+    // Serial3.print("battery:");
+    // Serial3.println((int)batteryPercent);
 
     //ultra sonic output
-    Serial.print("ultrasonic-altitude:");
-    Serial.println(filteredDist);
+    Serial3.print("ultrasonic-altitude:");
+    Serial3.println(filteredDist);
 
     
   }
@@ -283,6 +283,9 @@ void loop() {
   filteredDist = filteredDistance();
 
   float rawV = readBatVoltage(voltagePin);
+
+  Serial3.print("ultrasonic-altitude:");
+  Serial3.println(filteredDist);
 
 
     
@@ -300,14 +303,14 @@ void loop() {
   }
 
   // Reading for input================================================================================================================
-  if(Serial.available() > 0)
+  if(Serial3.available() > 0)
   {
    // cli();  // clear interrupts
     //
-    String message = Serial.readStringUntil('\n');
+    String message = Serial3.readStringUntil('\n');
     message.trim();
-    // Serial.print("got message");
-    // Serial.println(message);
+    // Serial3.print("got message");
+    // Serial3.println(message);
 
     int colonDex = message.indexOf(':');
 
@@ -323,11 +326,11 @@ void loop() {
 
 
       //printing command
-      // Serial.print("command = ");
-      // Serial.println(Command);
+      // Serial3.print("command = ");
+      // Serial3.println(Command);
 
       // //printing value
-      // Serial.print("value = ");
+      // Serial3.print("value = ");
       // Serial.println(value);
 
       //controlling speed
