@@ -164,7 +164,7 @@ def telemetry_updater():
                 app.logger.error(f"Failed to fetch telemetry: {res.status_code}")
         except Exception as e:
             app.logger.error(f"Telemetry fetch error: {e}")
-        socketio.sleep(5)  # adjust update rate as needed
+        socketio.sleep(0.3)  # adjust update rate as needed
 
 @socketio.on("connect")
 def handle_connect():
