@@ -73,7 +73,7 @@ def arduinoWriter():
         with uart.uart_lock:
             for key, value in commands_to_send.items():
                 uart.writeArduinoCommmand(key, f"{value}")
-        time.sleep(0.30)  # Adjust as needed
+        time.sleep(0.25)  # Adjust as needed
 
 
 # ---- UART reader thread ----
@@ -84,7 +84,7 @@ def uartReader():
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(0.001) #add or remove delay on reading data
+            time.sleep(0.02) #add or remove delay on reading data
 
 # # ---- UART communication thread ---- Main Comms Thread
 # def UARTCommunicator():
@@ -136,7 +136,7 @@ def PIDController():
             Flaskapp.control_commands['front-motors'] = 0
 
         # short delay
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 # def UltrasonicReader():
 #     try:
@@ -286,7 +286,7 @@ if __name__ == '__main__':
 
     while True:
         #uart.writeArduinoCommmand("left","20")
-        time.sleep(5)
+        time.sleep(100)
 
 
 
