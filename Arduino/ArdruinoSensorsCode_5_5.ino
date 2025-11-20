@@ -354,9 +354,9 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1070, 1980);
+        int pulse = map(Speed, 0, 100, 1075, 2000);
         frontleft.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1060, 1980);
+        pulse = map(Speed, 0, 100, 1075, 2000);
         frontright.writeMicroseconds(pulse);
 
         
@@ -366,12 +366,13 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1075, 1985);
+        int pulse = map(Speed, 0, 100, 1075, 2000);
         backright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1061, 1955);
+        pulse = map(Speed, 0, 100, 1075, 2000);
         backleft.writeMicroseconds(pulse);
         
       }
+
 
       if(Command.equals("stop")) //stop:1 stops all motors
       {
