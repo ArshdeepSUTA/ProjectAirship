@@ -118,7 +118,7 @@ def generate_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frameBytes + b'\r\n')
 
         #time delay for cpu usage. added for 20fps
-        time.sleep(0.1)
+        time.sleep(0.2)
 
 
 @app.route('/video_feed')
@@ -235,14 +235,14 @@ def receive_command():
     if cmd:
         print(f"Received command: {cmd}")
         if cmd == "left":               # turn left - speed 50
-            control_commands["left-motor"] = 50
+            control_commands["left-motor"] = 25
             control_commands["right-motor"] = 0
         elif cmd == "right":            # turn right - speed 50  
             control_commands["left-motor"] = 0
-            control_commands["right-motor"] = 50
+            control_commands["right-motor"] = 25
         elif cmd == "forward":          # move forward - both motors at speed 50
-            control_commands["left-motor"] = 50
-            control_commands["right-motor"] = 50
+            control_commands["left-motor"] = 25
+            control_commands["right-motor"] = 25
         elif cmd == "stop-forward":     # stop both motors 
             control_commands["left-motor"] = 0
             control_commands["right-motor"] = 0

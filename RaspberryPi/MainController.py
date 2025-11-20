@@ -73,7 +73,7 @@ def arduinoWriter():
         with uart.uart_lock:
             for key, value in commands_to_send.items():
                 uart.writeArduinoCommmand(key, f"{value}")
-        time.sleep(0.25)  # Adjust as needed
+        time.sleep(0.30)  # Adjust as needed
 
 
 # ---- UART reader thread ----
@@ -84,7 +84,7 @@ def uartReader():
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(0.02) #add or remove delay on reading data
+            time.sleep(0.1) #add or remove delay on reading data
 
 # # ---- UART communication thread ---- Main Comms Thread
 # def UARTCommunicator():
