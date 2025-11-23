@@ -227,3 +227,6 @@ function updateTelemetryDisplay(data) {
         if (el) el.textContent = val;
     });
 }
+
+document.getElementById("connection-status").textContent = "Connected";
+
