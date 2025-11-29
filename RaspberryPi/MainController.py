@@ -3,7 +3,7 @@ import time
 import threading
 import uart
 import gps_hat
-import pid
+# import pid
 from multiprocessing import Process
 
 import math
@@ -114,37 +114,31 @@ def uartReader():
 #         #time.sleep(0.001)  # small delay to prevent CPU overload
 
 # ---- PID controller thread ----
-def PIDController():
-    # Initialize PID controller
-    pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['Taltitude'], output_limits=(0, 50))
+# def PIDController():
+#     # Initialize PID controller
+#     pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['Taltitude'], output_limits=(0, 50))
     
-    while True:
-        pid.set_altitude(pid_controller, Flaskapp.control_commands['Taltitude'])
-        # Update PID with current altitude
-        output = pid.update_pid(pid_controller, Flaskapp.blimp_data["ultrasonic-altitude"])
+#     while True:
+#         pid.set_altitude(pid_controller, Flaskapp.control_commands['Taltitude'])
+#         # Update PID with current altitude
+#         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["ultrasonic-altitude"])
 
-        if(Flaskapp.blimp_data["pid-toggle"] == 1):
-            with blimp_data_lock:
-                if(Flaskapp.blimp_data["stop"] == 0):
-                    Flaskapp.control_commands['back-motors'] = int(output)
-                    Flaskapp.control_commands['front-motors'] = int(output)
-                else:
-                    Flaskapp.control_commands['back-motors'] = 0
-                    Flaskapp.control_commands['front-motors'] = 0
-        elif (Flaskapp.blimp_data["stop"] == 1):
-            Flaskapp.control_commands['back-motors'] = 0
-            Flaskapp.control_commands['front-motors'] = 0
+#         if(Flaskapp.blimp_data["pid-toggle"] == 1):
+#             with blimp_data_lock:
+#                 if(Flaskapp.blimp_data["stop"] == 0):
+#                     Flaskapp.control_commands['back-motors'] = int(output)
+#                     Flaskapp.control_commands['front-motors'] = int(output)
+#                 else:
+#                     Flaskapp.control_commands['back-motors'] = 0
+#                     Flaskapp.control_commands['front-motors'] = 0
+#         elif (Flaskapp.blimp_data["stop"] == 1):
+#             Flaskapp.control_commands['back-motors'] = 0
+#             Flaskapp.control_commands['front-motors'] = 0
 
-        # short delay
-        time.sleep(0.5)
+#         # short delay
+#         time.sleep(0.5)
 
-# def UltrasonicReader():
-#     try:
-#         altitude = Ultrasonic.getDistanceInCm()
-#         with blimp_data_lock:
-#             Flaskapp.blimp_data["ultrasonic-altitude"] = altitude
-#     except Exception as e:
-#         print(f"Ultrasonic sensor read error: {e}")
+
 
 
 # -------------------- auto nav algorithm functions -------------------------
@@ -246,11 +240,11 @@ def uart_communicator_thread():
     uart_thread.start()
     return uart_thread
 
-def start_pid_thread():
-    print("Starting PID controller thread...")
-    pid_thread = threading.Thread(target=PIDController, daemon=True)
-    pid_thread.start()
-    return pid_thread
+# def start_pid_thread():
+#     print("Starting PID controller thread...")
+#     pid_thread = threading.Thread(target=PIDController, daemon=True)
+#     pid_thread.start()
+#     return pid_thread
 
 # def start_ultrasonic_thread():
 #     print("Starting Ultrasonic reader thread...")
@@ -277,8 +271,8 @@ if __name__ == '__main__':
     uart_thread = start_uart_reader_thread()
     # uart_thread = uart_communicator_thread()
 
-    # --- Start PID controller thread ----
-    pid_thread = start_pid_thread()
+    # # --- Start PID controller thread ----
+    # pid_thread = start_pid_thread()
 
     # # --- Start Ultrasonic reader thread ----
     # ultrasonic_thread = start_ultrasonic_thread()

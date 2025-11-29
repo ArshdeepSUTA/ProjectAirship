@@ -134,15 +134,9 @@ blimp_data = {
 
     # #IMU DATA
     "imu-heading": 0,
-    # "Accel_X": 0.0,
-    # "Accel_Y": 0.0,
-    # "Accel_Z": 0.0,
-    # "Mag_X": 0.0,
-    # "Mag_Y": 0.0,
-    # "Mag_Z": 0.0,
-    # "Gyro_X": 0.0,
-    # "Gyro_Y": 0.0,
-    # "Gyro_Z": 0.0,
+    "pitch": 0.0,
+    "roll": 0.0,
+    "ultrasonic-altitude": 0,
     #LIDAR DATA
     "distance": 0,
     #GPS DATA
@@ -160,11 +154,10 @@ blimp_data = {
     "back-motors": 0,
     "front-motors": 0,
     "battery": 100,
-    "current": 0,
     #ultrasonic altitude
-    "ultrasonic-altitude": 0,
     "stop": 0,
-    "pid-toggle": 0
+    "pid" : 0,
+    "Taltitude": 0.0,
 }
 
 
@@ -178,7 +171,8 @@ control_commands = {
     "right-motor": 0,
     "back-motors": 0,
     "stop": 0,   
-    "Taltitude": 20.0
+    "Taltitude": 20.0,
+    "pid": 0
 }
 
 # index route
@@ -215,9 +209,8 @@ def receive_control_commands():
         #update variables in controls object - added key error protection
         control_commands["left-motor"] = received_json.get("frontleft", control_commands["left-motor"])
         control_commands["right-motor"] = received_json.get("frontright", control_commands["right-motor"])
-        if blimp_data["pid-toggle"] == 0:
-            control_commands["back-motors"] = received_json.get("back", control_commands["back-motors"])
-            control_commands["front-motors"] = received_json.get("back", control_commands["front-motors"])
+        control_commands["back-motors"] = received_json.get("back", control_commands["back-motors"])
+        control_commands["front-motors"] = received_json.get("back", control_commands["front-motors"])
         control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
@@ -261,7 +254,7 @@ def receive_command():
             with uart.uart_lock:
                 uart.writeArduinoCommmand("stop", "1")
         elif cmd == "pid-toggle":
-            blimp_data["pid-toggle"] = 1 - blimp_data["pid-toggle"]  # toggle between 0 and 1
+            control_commands["pid"] = 1 - control_commands["pid"]  # toggle between 0 and 1
             # if blimp_data["pid-toggle"] == 0:
             #     control_commands["back-motors"] = 0
             #     control_commands["front-motors"] = 0
