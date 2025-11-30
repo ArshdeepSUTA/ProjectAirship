@@ -3,6 +3,7 @@ import time
 import threading
 import cv2
 import uart
+import MainController
 
 #import camera libraries
 from picamera2 import Picamera2
@@ -165,14 +166,13 @@ blimp_data = {
 #control commands reiceved from laptop
 #add controls
 control_commands = {
-    "temp": 1234,
     "front-motors": 0,
     "left-motor": 0,  
     "right-motor": 0,
     "back-motors": 0,
     "stop": 0,   
-    "Taltitude": 20.0,
-    "pid": 0
+    "Taltitude": 0.0,
+    "pid": 0,
 }
 
 # index route
@@ -194,7 +194,7 @@ def index():
 @app.route('/blimp-status', methods=['GET'])
 def get_blimp_status():
     #Responds to get commands on the raspberry pi server and responds with json data
-    print(f"Sending blimp status: {blimp_data}")
+   # print(f"Sending blimp status: {blimp_data}")
     return jsonify(blimp_data)
 
 #post route - for recieving commands
@@ -216,6 +216,7 @@ def receive_control_commands():
         print(f"Received control commands: {received_json}")
         print(f"Updated control state: {control_commands}")
 
+        MainController.arduinoWriter()
         return jsonify({"current_commands": control_commands}), 200
     else:
         # if the request is not JSON, return an error
@@ -247,18 +248,19 @@ def receive_command():
             control_commands["right-motor"] = 0
         elif cmd == "start-blimp":
             blimp_data["startFlag"] = 1
-            blimp_data["stop"] = 0
+            control_commands["stop"] = 0
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
-            blimp_data["stop"] = 1
-            with uart.uart_lock:
-                uart.writeArduinoCommmand("stop", "1")
+            control_commands["stop"] = 1
+            # with uart.uart_lock:
+            #     uart.writeArduinoCommmand("stop", "1")
         elif cmd == "pid-toggle":
             control_commands["pid"] = 1 - control_commands["pid"]  # toggle between 0 and 1
             # if blimp_data["pid-toggle"] == 0:
             #     control_commands["back-motors"] = 0
             #     control_commands["front-motors"] = 0
 
+        MainController.arduinoWriter()
         return "OK", 200
     return "No command received", 400
 

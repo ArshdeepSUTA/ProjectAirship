@@ -3,6 +3,7 @@ import time
 import threading
 import uart
 import gps_hat
+import logging
 # import pid
 from multiprocessing import Process
 
@@ -23,6 +24,8 @@ blimp_data_lock = threading.Lock()
 #flask app (networking) thread function, starts the flask app in its own special thread
 def runFlaskApp():
     print("Running Flask app...")
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
     Flaskapp.app.run(host='192.168.4.1', port=5000, debug=False)
 
 
@@ -65,15 +68,16 @@ def GPSReader():
 
 # ---- Arduino writer thread ----
 def arduinoWriter():
-    while True:
+    #while True:
         # Only send if commands have changed
-        commands_to_send = {}
-        with blimp_data_lock:
-            commands_to_send = Flaskapp.control_commands.copy()
-        with uart.uart_lock:
-            for key, value in commands_to_send.items():
-                uart.writeArduinoCommmand(key, f"{value}")
-        time.sleep(0.30)  # Adjust as needed
+    commands_to_send = {}
+    with blimp_data_lock:
+        commands_to_send = Flaskapp.control_commands.copy()
+    with uart.uart_lock:
+        for key, value in commands_to_send.items():
+            uart.writeArduinoCommmand(key, f"{value}")
+            # time.sleep(0.001)
+        #time.sleep(0.30)  # Adjust as needed
 
 
 # ---- UART reader thread ----
@@ -84,7 +88,7 @@ def uartReader():
         handleData(line)
         if line:
             print(f"from arduino {line}") #handle data read
-            time.sleep(0.1) #add or remove delay on reading data
+            time.sleep(0.005) #add or remove delay on reading data
 
 # # ---- UART communication thread ---- Main Comms Thread
 # def UARTCommunicator():
@@ -267,7 +271,7 @@ if __name__ == '__main__':
     #gps_thread = start_gps_thread()
     
     # --- Start UART read and write threads ----
-    arduino_thread = start_arduino_writer_thread()
+    #arduino_thread = start_arduino_writer_thread()
     uart_thread = start_uart_reader_thread()
     # uart_thread = uart_communicator_thread()
 
@@ -280,7 +284,7 @@ if __name__ == '__main__':
 
     while True:
         #uart.writeArduinoCommmand("left","20")
-        time.sleep(100)
+        time.sleep(100000)
 
 
 

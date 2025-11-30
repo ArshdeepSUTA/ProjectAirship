@@ -49,6 +49,7 @@ def writeArduinoCommmand(command: str, value: str):
     try:
         message = f"{command}:{value}\n"
         arduino.write(message.encode('utf-8'))
+        arduino.flush()
         print(f"[pi send to arduino] {message.strip()}")
     except Exception as e:
             print(f"failed to write data due to {e}")
