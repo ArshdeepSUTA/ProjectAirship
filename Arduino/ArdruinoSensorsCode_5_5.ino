@@ -17,25 +17,14 @@ SR04 sensor = SR04(ECHO,TRIG);
 long distance[SAMPLES];
 int IND = 0;
 float filteredDist;
+float roll;
+float pitch;
+
+float target_altitude = 0.0; //desired altitude in cm
 
 // defines
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-// Analog Current Sensor Calibration ------------------------------------------------------------------------
-#define voltagePin A0 //voltage divider pin
-
-// voltage divider constants
-#define R1 10000.0
-#define R2 4700.0
-#define DIVIDER_RATIO ((R1 + R2) / R2)  // ~3.12
-
-#define VCC 5.0
-#define ADC_RES 1023.0  
-//battery variables
-#define BATTERY_CAPACITY_mAh 5200.0
-float batteryPercent = 0.0;
-
-//end current sensor stuff----------------------------------------------------------------------------------
 
 #define WIRE_PORT Wire // desired Wire port.
 #define AD0_VAL 1 // value of the last bit of the I2C address.
@@ -78,6 +67,13 @@ Servo backright;
 Servo frontleft;
 Servo frontright; 
 
+//pid
+int pidOutUpwards = 0;
+bool PIDenabled = false;
+float pidOutput = 0;
+float pitchOutput = 0;
+
+
 int Speed;
 
 //FILTERED DISTANCE 
@@ -97,15 +93,118 @@ float filteredDistance()
   return avg;
 }
 
-float readBatVoltage(int voltagePin)
+float upwardPID()
 {
-  float rawV = analogRead(voltagePin);
-  float vMeasured = (rawV * VCC) / ADC_RES;
-  float batteryVoltage = vMeasured * DIVIDER_RATIO;
-  return batteryVoltage;
+  // tune
+  float Kp = 1.0;
+  float Ki = 0.05;
+  float Kd = 0.2;
+
+  // output limits (percent or arbitrary units to be combined with tilt PID)
+  float OUT_MIN = 0;
+  float OUT_MAX = 100.0;
+  float INTEGRAL_LIMIT = 10.0;
+
+  static float integral = 0.0;
+  static float prevError = 0.0;
+  static unsigned long prevMillis = 0;
+
+  if (!PIDenabled)
+  {
+    // reset integrator and derivative
+    integral = 0.0;
+    prevError = 0.0;
+    prevMillis = millis();
+    return 0.0;
+  }
+
+  // remove invalid valuew of dist
+  if (filteredDist <= 0.0) 
+  {
+    return 0.0;
+  }
+
+  // get delta time
+  unsigned long now = millis();
+  float dt = (prevMillis == 0) ? 0.02f : (now - prevMillis) / 1000.0f;
+  if (dt <= 0.0f) dt = 0.02f;
+  prevMillis = now;
+
+  // get error
+  float error = target_altitude - filteredDist;
+
+  // integral with anti-windup
+  integral += error * dt;
+  if (integral > INTEGRAL_LIMIT) integral = INTEGRAL_LIMIT;
+  if (integral < -INTEGRAL_LIMIT) integral = -INTEGRAL_LIMIT;
+
+  // derivative
+  float derivative = (error - prevError) / dt;
+  prevError = error;
+
+  // PID output
+  float output = Kp * error + Ki * integral + Kd * derivative;
+
+  // clamp output
+  if (output > OUT_MAX) output = OUT_MAX;
+  if (output < OUT_MIN) output = OUT_MIN;
+
+  return output;
 }
 
+float pitchPID()
+{
+    // tune
+  float Kp = 1.0;
+  float Ki = 0.05;
+  float Kd = 0.2;
 
+  // output limits (percent or arbitrary units to be combined with tilt PID)
+  float OUT_MIN = -5;
+  float OUT_MAX = 5;
+  float INTEGRAL_LIMIT = 3.0;
+
+  static float integralPitch = 0.0;
+  static float prevErrorPitch = 0.0;
+  static unsigned long prevMillisPitch = 0;
+
+  if (!PIDenabled)
+  {
+    // reset integrator and derivative
+    integralPitch = 0.0;
+    prevErrorPitch = 0.0;
+    prevMillisPitch = millis();
+    return 0.0;
+  }
+
+
+  // get delta time
+  unsigned long now = millis();
+  float dt = (prevMillisPitch == 0) ? 0.02f : (now - prevMillisPitch) / 1000.0f;
+  if (dt <= 0.0f) dt = 0.02f;
+  prevMillisPitch = now;
+  // get error
+  float error = 0 - pitch;
+
+  // integral with anti-windup
+  integralPitch += error * dt;
+  if (integralPitch > INTEGRAL_LIMIT) integralPitch = INTEGRAL_LIMIT;
+  if (integralPitch < -INTEGRAL_LIMIT) integralPitch = -INTEGRAL_LIMIT;
+
+  // derivative
+  float derivative = (error - prevErrorPitch) / dt;
+  prevErrorPitch = error;
+
+  // PID output
+  float output = Kp * error + Ki * integralPitch + Kd * derivative;
+
+  // clamp output
+  if (output > OUT_MAX) output = OUT_MAX;
+  if (output < OUT_MIN) output = OUT_MIN;
+
+
+  return output;
+}
 
 void setup() {
 
@@ -117,8 +216,8 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // attach pin to ESC
-  left.attach(1,1000,2000);
-  right.attach(3,1000,2000);
+  left.attach(3,1000,2000);
+  right.attach(5,1000,2000);
   backleft.attach(6,1000,2000);
   backright.attach(8,1000,2000);
   frontright.attach(4,1000,2000);
@@ -204,12 +303,12 @@ void loop() {
 
   //check for incoming data
   //Serial3.println("waiting for message...");
-
+  static float Axyz[3], Mxyz[3]; //centered and scaled accel/mag data
   if (timerFlag)
   {
     timerFlag = false;
     
-    static float Axyz[3], Mxyz[3]; //centered and scaled accel/mag data
+
 
     // Update the sensor values whenever new data is available
     if ( imu.dataReady() ) imu.getAGMT();
@@ -260,47 +359,72 @@ void loop() {
       Serial3.print(F("distance:")); Serial3.println(0);
     }
 
-    // current and battery calculations ----------------------------------------------------------------------------------
-    //print current sensor data
-    // Get ADC reading for a0
-    //get battery voltage
+    if(!PIDenabled)
+    {
+        Serial3.print("ultrasonic-altitude:"); Serial3.println(filteredDist);
+        Serial3.print("upward-pid-output:"); Serial3.println(pidOutput);
+        Serial3.print("roll: "); Serial3.println(roll);
+        Serial3.print("pitch: "); Serial3.println(pitch);
+        Serial3.print("pitch-pid-output:"); Serial3.println(pitchOutput);
+        Serial3.print("PID-Enabled: "); Serial3.println(PIDenabled);
+        Serial3.print("Taltitude: "); Serial3.println(target_altitude);
+    }
 
-
-
-
-    //current and battery calculations ---------------------------------------------------------------------
-    //print results as integers
-    // Serial3.print("battery:");
-    // Serial3.println((int)batteryPercent);
-
-    //ultra sonic output
-    Serial3.print("ultrasonic-altitude:");
-    Serial3.println(filteredDist);
-
-    
   }
 
   filteredDist = filteredDistance();
 
-  float rawV = readBatVoltage(voltagePin);
+  get_roll_pitch(Axyz, roll, pitch);
+  roll = roll + 13.90;
+  pitch = pitch + 28.50;
 
-  Serial3.print("ultrasonic-altitude:");
-  Serial3.println(filteredDist);
+if(PIDenabled)
+{
+    pidOutput= upwardPID();
+    pitchOutput = pitchPID();
+    Serial3.print("upward-pid-output:");
+    Serial3.println(pidOutput);
+
+    Serial3.print("ultrasonic-altitude:");
+    Serial3.println(filteredDist);
+    Serial3.print("roll: "); Serial3.println(roll);
+    Serial3.print("pitch: "); Serial3.println(pitch);
+    Serial3.print("pitch-pid-output:");
+    Serial3.println(pitchOutput);
+
+    //adjust front and back motors
+
+    float frontleftpitch, frontrightpitch, backrightpitch, backleftpitch;
+
+    if(pitchOutput > 0) //nose up
+    {
+      frontleftpitch = pidOutput - pitchOutput;
+      frontrightpitch = pidOutput - pitchOutput;
+      backrightpitch = pidOutput + pitchOutput;
+      backleftpitch = pidOutput + pitchOutput;
+    }
+    else //nose down
+    {
+      frontleftpitch = pidOutput + abs(pitchOutput);
+      frontrightpitch = pidOutput + abs(pitchOutput);
+      backrightpitch = pidOutput - abs(pitchOutput);
+      backleftpitch = pidOutput - abs(pitchOutput);
+    }
 
 
-    
-  if(rawV >= 8.4)
-  {
-    batteryPercent = 100.0;
+    int pulse = map(frontleftpitch, 0, 100, 1073, 2000);
+    frontleft.writeMicroseconds(pulse);
+
+    pulse = map(frontrightpitch, 0, 100, 1073, 2000);
+    frontright.writeMicroseconds(pulse);
+
+    pulse = map(backrightpitch, 0, 100, 1073, 2000);
+    backright.writeMicroseconds(pulse);
+
+    pulse = map(backleftpitch, 0, 100, 1073, 2000);
+    backleft.writeMicroseconds(pulse);
   }
-  else if(rawV <= 6.4)
-  {
-    batteryPercent = 0.0;
-  }
-  else
-  {
-    batteryPercent = ((rawV - 6.4) / (8.4 - 6.4)) * 100.0;
-  }
+
 
   // Reading for input================================================================================================================
   if(Serial3.available() > 0)
@@ -310,7 +434,7 @@ void loop() {
     String message = Serial3.readStringUntil('\n');
     message.trim();
     // Serial3.print("got message");
-    // Serial3.println(message);
+    //Serial3.println(message);
 
     int colonDex = message.indexOf(':');
 
@@ -329,15 +453,40 @@ void loop() {
       // Serial3.print("command = ");
       // Serial3.println(Command);
 
-      // //printing value
+      // // //printing value
       // Serial3.print("value = ");
-      // Serial.println(value);
+      // Serial3.println(value);
+
+      //turning on PID
+      if(Command.equals("pid"))
+      {
+        if(value.toInt() == 1)
+        {
+          PIDenabled = true;
+        }
+        else
+        {
+          PIDenabled = false;
+          right.write(0);
+          left.write(0);
+          backright.write(0);
+          backleft.write(0);
+          frontright.write(0);
+          frontleft.write(0);
+        }
+      }
+
+      //updating target alttitude
+      if(Command.equals("Taltitude"))
+      {
+        target_altitude = value.toFloat();
+      }
 
       //controlling speed
       if(Command.equals("left-motor"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1060, 2000);
+        int pulse = map(Speed, 0, 100, 1067, 2000);
         left.writeMicroseconds(pulse);
 
       }
@@ -345,20 +494,23 @@ void loop() {
       if(Command.equals("right-motor"))
       {
         Speed = value.toInt();
-        int pulse = map(Speed, 0, 100, 1050, 2000);
+        int pulse = map(Speed, 0, 100, 1070, 2000);
         right.writeMicroseconds(pulse);
 
       }
 
       if(Command.equals("front-motors"))
       {
-        Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1075, 2000);
-        frontleft.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1075, 2000);
-        frontright.writeMicroseconds(pulse);
+        if(PIDenabled == false)
+        {
+          Speed = value.toInt();
 
+          int pulse = map(Speed, 0, 100, 1073, 2000);
+          frontleft.writeMicroseconds(pulse);
+          pulse = map(Speed, 0, 100, 1073, 2000);
+          frontright.writeMicroseconds(pulse);
+        }
         
       }
 
@@ -366,17 +518,19 @@ void loop() {
       {
         Speed = value.toInt();
 
-        int pulse = map(Speed, 0, 100, 1075, 2000);
-        backright.writeMicroseconds(pulse);
-        pulse = map(Speed, 0, 100, 1075, 2000);
-        backleft.writeMicroseconds(pulse);
+        if(PIDenabled == false)
+        {
+          int pulse = map(Speed, 0, 100, 1073, 2000);
+          backright.writeMicroseconds(pulse);
+          pulse = map(Speed, 0, 100, 1073, 2000);
+          backleft.writeMicroseconds(pulse);
+        }
         
       }
 
-
       if(Command.equals("stop")) //stop:1 stops all motors
       {
-
+        PIDenabled = false;
         if(value.toInt() == 1)
         {
           right.write(0);
@@ -460,4 +614,17 @@ void vector_normalize(float a[3])
   a[0] /= mag;
   a[1] /= mag;
   a[2] /= mag;
+}
+
+void get_roll_pitch(float a[3], float &rollDeg, float &pitchDeg)
+{
+  float ax = a[0];
+  float ay = a[1];
+  float az = a[2];
+
+  // roll: atan2(Y, Z)
+  rollDeg = atan2(ay, az) * 180.0 / M_PI;
+
+  // pitch: atan2(-X, sqrt(Y*Y + Z*Z))
+  pitchDeg = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
 }

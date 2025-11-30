@@ -103,7 +103,7 @@ float upwardPID()
   // output limits (percent or arbitrary units to be combined with tilt PID)
   float OUT_MIN = 0;
   float OUT_MAX = 100.0;
-  float INTEGRAL_LIMIT = 200.0;
+  float INTEGRAL_LIMIT = 10.0;
 
   static float integral = 0.0;
   static float prevError = 0.0;
@@ -361,15 +361,13 @@ void loop() {
 
     if(!PIDenabled)
     {
-        Serial3.print("ultrasonic-altitude:");
-        Serial3.println(filteredDist);
-        Serial3.print("upward-pid-output:");
-        Serial3.println(pidOutput);
+        Serial3.print("ultrasonic-altitude:"); Serial3.println(filteredDist);
+        Serial3.print("upward-pid-output:"); Serial3.println(pidOutput);
         Serial3.print("roll: "); Serial3.println(roll);
         Serial3.print("pitch: "); Serial3.println(pitch);
-        Serial3.print("pitch-pid-output:");
-        Serial3.println(pitchOutput);
-        
+        Serial3.print("pitch-pid-output:"); Serial3.println(pitchOutput);
+        Serial3.print("PID-Enabled: "); Serial3.println(PIDenabled);
+        Serial3.print("Taltitude: "); Serial3.println(target_altitude);
     }
 
   }
@@ -436,7 +434,7 @@ if(PIDenabled)
     String message = Serial3.readStringUntil('\n');
     message.trim();
     // Serial3.print("got message");
-    // Serial3.println(message);
+    //Serial3.println(message);
 
     int colonDex = message.indexOf(':');
 
@@ -452,12 +450,12 @@ if(PIDenabled)
 
 
       //printing command
-      Serial3.print("command = ");
-      Serial3.println(Command);
+      // Serial3.print("command = ");
+      // Serial3.println(Command);
 
-      // //printing value
-      Serial3.print("value = ");
-      Serial.println(value);
+      // // //printing value
+      // Serial3.print("value = ");
+      // Serial3.println(value);
 
       //turning on PID
       if(Command.equals("pid"))
