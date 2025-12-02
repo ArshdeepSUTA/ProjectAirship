@@ -90,60 +90,6 @@ def uartReader():
             print(f"from arduino {line}") #handle data read
             time.sleep(0.005) #add or remove delay on reading data
 
-# # ---- UART communication thread ---- Main Comms Thread
-# def UARTCommunicator():
-#     last_write_time = 0
-#     write_interval = 0.25 # seconds
-
-#     while True:
-#         current_time = time.time()
-#         # Read data from Arduino
-#         with uart.uart_lock:
-#             line = uart.readArduinoData()
-#         handleData(line)
-#         if line:
-#             print(f"from arduino {line}") #handle data read
-
-#         # Write data to Arduino at defined intervals
-#         if current_time - last_write_time >= write_interval:
-#             with blimp_data_lock:
-#                 commands_to_send = Flaskapp.control_commands.copy()
-#             with uart.uart_lock:
-#                 for key, value in commands_to_send.items():
-#                     uart.writeArduinoCommmand(key, f"{value}")
-#             last_write_time = current_time
-#             uart.arduino.flush()
-
-#         pass
-#         #time.sleep(0.001)  # small delay to prevent CPU overload
-
-# ---- PID controller thread ----
-# def PIDController():
-#     # Initialize PID controller
-#     pid_controller = pid.init_pid(Kp=1.0, Ki=0.1, Kd=0.05, setpoint=Flaskapp.control_commands['Taltitude'], output_limits=(0, 50))
-    
-#     while True:
-#         pid.set_altitude(pid_controller, Flaskapp.control_commands['Taltitude'])
-#         # Update PID with current altitude
-#         output = pid.update_pid(pid_controller, Flaskapp.blimp_data["ultrasonic-altitude"])
-
-#         if(Flaskapp.blimp_data["pid-toggle"] == 1):
-#             with blimp_data_lock:
-#                 if(Flaskapp.blimp_data["stop"] == 0):
-#                     Flaskapp.control_commands['back-motors'] = int(output)
-#                     Flaskapp.control_commands['front-motors'] = int(output)
-#                 else:
-#                     Flaskapp.control_commands['back-motors'] = 0
-#                     Flaskapp.control_commands['front-motors'] = 0
-#         elif (Flaskapp.blimp_data["stop"] == 1):
-#             Flaskapp.control_commands['back-motors'] = 0
-#             Flaskapp.control_commands['front-motors'] = 0
-
-#         # short delay
-#         time.sleep(0.5)
-
-
-
 
 # -------------------- auto nav algorithm functions -------------------------
 def haversine(lat1, lon1, lat2, lon2):
@@ -244,17 +190,6 @@ def uart_communicator_thread():
     uart_thread.start()
     return uart_thread
 
-# def start_pid_thread():
-#     print("Starting PID controller thread...")
-#     pid_thread = threading.Thread(target=PIDController, daemon=True)
-#     pid_thread.start()
-#     return pid_thread
-
-# def start_ultrasonic_thread():
-#     print("Starting Ultrasonic reader thread...")
-#     ultrasonic_thread = threading.Thread(target=UltrasonicReader, daemon=True)
-#     ultrasonic_thread.start()
-#     return ultrasonic_thread
 
 
 if __name__ == '__main__':
@@ -267,59 +202,16 @@ if __name__ == '__main__':
     while(Flaskapp.blimp_data["startFlag"] == 0):
         time.sleep(0.1)
 
-    # --- Start GPS ----
+    # --- Start GPS ----  start this thread outside a building to get a GPS fix
     #gps_thread = start_gps_thread()
     
     # --- Start UART read and write threads ----
-    #arduino_thread = start_arduino_writer_thread()
     uart_thread = start_uart_reader_thread()
-    # uart_thread = uart_communicator_thread()
 
-    # # --- Start PID controller thread ----
-    # pid_thread = start_pid_thread()
 
-    # # --- Start Ultrasonic reader thread ----
-    # ultrasonic_thread = start_ultrasonic_thread()
+
 
 
     while True:
         #uart.writeArduinoCommmand("left","20")
         time.sleep(100000)
-
-
-
-
-
-
-
-
-# old start up thread code
-    # # # --- start gps ---
-    # # print("Starting GPS thread")
-    # # gps_hat.gps_connect()
-    # # gps_thread = threading.Thread(target=GPSReader, daemon=True)
-    # # gps_thread.start()
-
-    # #delay for gps to connect and start
-    # time.sleep(1)
-
-    # # --- start networking ---
-    # print("Starting Flask app as a thread...")
-    # flaskThread = threading.Thread(target=runFlaskApp)
-    # flaskThread.daemon = True
-    # flaskThread.start()
-
-    # # --- start uart and reader thread --- 
-    # print("Starting UART app as a thread...")
-    # uart.initUart()
-    # readerThread = threading.Thread(target=uartReader, daemon=True)
-    # readerThread.start()
-    # # --- start arduino writer ---
-    # print("Starting Arduino writer thread")
-    # arduino_thread = threading.Thread(target=arduinoWriter, daemon=True)
-    # arduino_thread.start()
-
-    # # --- start pid controller ---
-    # print("Starting PID controller thread")
-    # pid_thread = threading.Thread(target=PIDController, daemon=True)
-    # pid_thread.start()

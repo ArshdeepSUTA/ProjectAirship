@@ -163,7 +163,7 @@ blimp_data = {
 
 
 
-#control commands reiceved from laptop
+#control commands reiceved from laptop - used for some cases
 #add controls
 control_commands = {
     "front-motors": 0,
@@ -216,19 +216,12 @@ def receive_control_commands():
         updatedCommands["front-motors"] = received_json.get("back", control_commands["front-motors"])
         updatedCommands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
 
-        #write updated commands to the arduino
+        # only write updated commands to the arduino
         for key, value in updatedCommands.items():
             if(value != control_commands[key]):
                 with uart.uart_lock:
                     uart.writeArduinoCommmand(key,f"{value}")
             control_commands[key] = value
-
-        #update variables in controls object - added key error protection
-        # control_commands["left-motor"] = received_json.get("frontleft", control_commands["left-motor"])
-        # control_commands["right-motor"] = received_json.get("frontright", control_commands["right-motor"])
-        # control_commands["back-motors"] = received_json.get("back", control_commands["back-motors"])
-        # control_commands["front-motors"] = received_json.get("back", control_commands["front-motors"])
-        # control_commands["Taltitude"] = received_json.get("Taltitude", control_commands["Taltitude"])
         
         print(f"Received control commands: {received_json}")
         print(f"Updated control state: {control_commands}")
@@ -246,60 +239,56 @@ def receive_command():
     if cmd:
         print(f"Received command: {cmd}")
         if cmd == "left":               # turn left - speed 50
-            # control_commands["left-motor"] = 25
-            # control_commands["right-motor"] = 0
+            blimp_data["left-motor"] = 25   #update data in the blimp_data dictionary
+            blimp_data["right-motor"] = 0
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "25")
                 uart.writeArduinoCommmand("right-motor", "0")
         elif cmd == "right":            # turn right - speed 50  
-            # control_commands["left-motor"] = 0
-            # control_commands["right-motor"] = 25
+            blimp_data["left-motor"] = 0
+            blimp_data["right-motor"] = 25
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "0")
                 uart.writeArduinoCommmand("right-motor", "25")
         elif cmd == "forward":          # move forward - both motors at speed 50
-            # control_commands["left-motor"] = 25
-            # control_commands["right-motor"] = 25
+            blimp_data["left-motor"] = 25
+            blimp_data["right-motor"] = 25
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "25")
                 uart.writeArduinoCommmand("right-motor", "25")
         elif cmd == "stop-forward":     # stop both motors 
-            # control_commands["left-motor"] = 0
-            # control_commands["right-motor"] = 0
+            blimp_data["left-motor"] = 0
+            blimp_data["right-motor"] = 0
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "0")
                 uart.writeArduinoCommmand("right-motor", "0")
         elif cmd == "stop-left":        # stop left motor
-            # control_commands["left-motor"] = 0
-            # control_commands["right-motor"] = 0
+            blimp_data["left-motor"] = 0
+            blimp_data["right-motor"] = 0
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "0")
                 uart.writeArduinoCommmand("right-motor", "0")
         elif cmd == "stop-right":       # stop right motor
-            # control_commands["left-motor"] = 0
-            # control_commands["right-motor"] = 0
+            blimp_data["left-motor"] = 0
+            blimp_data["right-motor"] = 0
             with uart.uart_lock:
                 uart.writeArduinoCommmand("left-motor", "0")
                 uart.writeArduinoCommmand("right-motor", "0")
         elif cmd == "start-blimp":
             blimp_data["startFlag"] = 1
-            # control_commands["stop"] = 0
+            blimp_data["stop"] = 0
             with uart.uart_lock:
                 uart.writeArduinoCommmand("stop", "0")
         elif cmd == "stop-blimp":
             blimp_data["startFlag"] = 0
-            # control_commands["stop"] = 1
+            blimp_data["stop"] = 1
             with uart.uart_lock:
                 uart.writeArduinoCommmand("stop", "1")
         elif cmd == "pid-toggle":
             control_commands["pid"] = 1 - control_commands["pid"]  # toggle between 0 and 1
             with uart.uart_lock:
                 uart.writeArduinoCommmand("pid", control_commands["pid"])
-            # if blimp_data["pid-toggle"] == 0:
-            #     control_commands["back-motors"] = 0
-            #     control_commands["front-motors"] = 0
 
-        # MainController.arduinoWriter()
         return "OK", 200
     return "No command received", 400
 

@@ -24,12 +24,14 @@ def initUart():
 #uart read - constant, in tread
 _read_buffer = b""
 
+# Read data function from arduino, returns a full line if available
+# added protection against read errors
 def readArduinoData():
     global _read_buffer
     if not arduino:
         return None
     try:
-        data = arduino.read(arduino.in_waiting or 1)
+        data = arduino.read(arduino.in_waiting or 1) # read available data
         if data:
             _read_buffer += data
 
