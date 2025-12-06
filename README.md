@@ -62,5 +62,41 @@ python pi_server.py
 
 Pi's Ip is 192.168.4.1
 
+### **Computer Vision System Overview**
+
+Our computer vision module uses OpenCV, Picamera2, and Flask to detect the landing pad and estimate distance in real time. The Raspberry Pi captures frames, OpenCV identifies the landing pad using edge and contour analysis, calculates an estimated distance using the pinhole camera model, and Flask streams the annotated video feed to a web browser.
+
+**Libraries Used**
+
+  1) OpenCV — image processing, edge detection, contour analysis.
+
+  2) Picamera2 — captures frames from the Raspberry Pi camera.
+
+  3) Flask — provides live MJPEG video streaming to a browser.
+
+**How the Landing Pad Detection Works**
+
+  1) Clean the image: Convert the frame to grayscale and apply Gaussian blur to reduce noise and smooth edges.
+
+  2) Extract edges: Use Canny Edge Detection followed by Morphological Closing to produce continuous edges and remove small gaps.
+
+  3) Identify the landing pad: Find all contours and filter them by area, aspect ratio (near-square), and solidity to isolate the landing pad shape.
+
+  4) Estimate distance: Use the pinhole camera formula: distance = (real_width * focal_length) / pixel_width
+  
+  (Where: pixel_width is the width (in pixels) of the detected landing pad in the camera frame & real_width is the width of the landing pad)
+
+**Computer Vision Techniques Used**
+
+  1) Grayscale Conversion
+
+  2) Gaussian Blur
+
+  3) Canny Edge Detection
+
+  4) Morphological Closing
+
+  5) Contour Detection
+
 
 
